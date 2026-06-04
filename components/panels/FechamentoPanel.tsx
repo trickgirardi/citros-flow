@@ -6,6 +6,8 @@ type FechamentoPanelProps = {
   balance: number;
   boardId: string;
   canMutate: boolean;
+  categorySuggestions: string[];
+  descriptionSuggestions: string[];
   entradasTotal: number;
   previousBalance: number;
   saidasTotal: number;
@@ -16,6 +18,8 @@ export function FechamentoPanel({
   balance,
   boardId,
   canMutate,
+  categorySuggestions,
+  descriptionSuggestions,
   entradasTotal,
   previousBalance,
   saidasTotal,
@@ -52,7 +56,11 @@ export function FechamentoPanel({
 
       {canMutate ? (
         <div className="mt-auto border-t p-3">
-          <TransactionModal boardId={boardId} />
+          <TransactionModal
+            boardId={boardId}
+            categorySuggestions={categorySuggestions}
+            descriptionSuggestions={descriptionSuggestions}
+          />
         </div>
       ) : null}
     </aside>

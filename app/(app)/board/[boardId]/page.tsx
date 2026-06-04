@@ -22,6 +22,7 @@ import {
 import {
   listTransactionsBeforeDate,
   listTransactionsByBoard,
+  listTransactionSuggestionsByBoard,
 } from "@/lib/supabase/queries/transactions";
 
 type BoardDashboardPageProps = {
@@ -45,7 +46,7 @@ export default async function BoardDashboardPage({
     notFound();
   }
 
-  const [transactions, previousTransactions, canMutate] = await Promise.all([
+  const [transactions, previousTransactions, canMutate, suggestions] = await Promise.all([
     listTransactionsByBoard({
       boardId: board.id,
       endDate: monthScope.endDate,
@@ -56,6 +57,7 @@ export default async function BoardDashboardPage({
       boardId: board.id,
     }),
     canMutateBoardForCurrentUser(board.id),
+    listTransactionSuggestionsByBoard(board.id),
   ]);
   const entradas = filterTransactionsByType(transactions, "entrada");
   const saidas = filterTransactionsByType(transactions, "saida");
@@ -88,12 +90,16 @@ export default async function BoardDashboardPage({
         <EntradasPanel
           boardId={board.id}
           canMutate={canMutate}
+          categorySuggestions={suggestions.categories}
+          descriptionSuggestions={suggestions.descriptions}
           groups={groupTransactionsByCategory(entradas)}
           total={entradasTotal}
         />
         <SaidasPanel
           boardId={board.id}
           canMutate={canMutate}
+          categorySuggestions={suggestions.categories}
+          descriptionSuggestions={suggestions.descriptions}
           groups={groupTransactionsByCategory(saidas)}
           total={saidasTotal}
         />
@@ -101,6 +107,8 @@ export default async function BoardDashboardPage({
           balance={previousBalance + entradasTotal - saidasTotal}
           boardId={board.id}
           canMutate={canMutate}
+          categorySuggestions={suggestions.categories}
+          descriptionSuggestions={suggestions.descriptions}
           entradasTotal={entradasTotal}
           previousBalance={previousBalance}
           saidasTotal={saidasTotal}

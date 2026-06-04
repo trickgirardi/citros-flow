@@ -4,6 +4,8 @@ import type { TransactionGroup } from "@/components/panels/dashboard-data";
 type EntradasPanelProps = {
   boardId: string;
   canMutate: boolean;
+  categorySuggestions: string[];
+  descriptionSuggestions: string[];
   groups: TransactionGroup[];
   total: number;
 };
@@ -11,6 +13,8 @@ type EntradasPanelProps = {
 export function EntradasPanel({
   boardId,
   canMutate,
+  categorySuggestions,
+  descriptionSuggestions,
   groups,
   total,
 }: EntradasPanelProps) {
@@ -18,6 +22,8 @@ export function EntradasPanel({
     <TransactionListPanel
       boardId={boardId}
       canMutate={canMutate}
+      categorySuggestions={categorySuggestions}
+      descriptionSuggestions={descriptionSuggestions}
       emptyLabel="Sem entradas neste board."
       groups={groups}
       title="Entradas"

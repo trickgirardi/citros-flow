@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useActionState } from "react";
+import { useId, useRef, useState, useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 
@@ -28,10 +28,19 @@ const INITIAL_STATE: TransactionFormState = {
 
 type TransactionModalProps = {
   boardId: string;
+  categorySuggestions?: string[];
+  descriptionSuggestions?: string[];
   transaction?: Transaction;
 };
 
-export function TransactionModal({ boardId, transaction }: TransactionModalProps) {
+export function TransactionModal({
+  boardId,
+  categorySuggestions = [],
+  descriptionSuggestions = [],
+  transaction,
+}: TransactionModalProps) {
+  const categoryListId = useId();
+  const descriptionListId = useId();
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -123,12 +132,18 @@ export function TransactionModal({ boardId, transaction }: TransactionModalProps
             <input
               name="description"
               type="text"
+              list={descriptionListId}
               required
               maxLength={120}
               className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.description}
               placeholder="Ex: Doacao mensal"
             />
+            <datalist id={descriptionListId}>
+              {descriptionSuggestions.map((description) => (
+                <option key={description} value={description} />
+              ))}
+            </datalist>
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium">
@@ -136,12 +151,18 @@ export function TransactionModal({ boardId, transaction }: TransactionModalProps
             <input
               name="category"
               type="text"
+              list={categoryListId}
               required
               maxLength={80}
               className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.category}
               placeholder="Ex: Doacoes"
             />
+            <datalist id={categoryListId}>
+              {categorySuggestions.map((category) => (
+                <option key={category} value={category} />
+              ))}
+            </datalist>
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium">

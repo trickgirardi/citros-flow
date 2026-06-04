@@ -19,10 +19,17 @@ const INITIAL_STATE: DeleteTransactionState = {
 
 type TransactionActionsProps = {
   boardId: string;
+  categorySuggestions: string[];
+  descriptionSuggestions: string[];
   transaction: Transaction;
 };
 
-export function TransactionActions({ boardId, transaction }: TransactionActionsProps) {
+export function TransactionActions({
+  boardId,
+  categorySuggestions,
+  descriptionSuggestions,
+  transaction,
+}: TransactionActionsProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(
     async (currentState: DeleteTransactionState, formData: FormData) => {
@@ -39,7 +46,12 @@ export function TransactionActions({ boardId, transaction }: TransactionActionsP
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <TransactionModal boardId={boardId} transaction={transaction} />
+      <TransactionModal
+        boardId={boardId}
+        categorySuggestions={categorySuggestions}
+        descriptionSuggestions={descriptionSuggestions}
+        transaction={transaction}
+      />
       <form
         action={formAction}
         onSubmit={(event) => {

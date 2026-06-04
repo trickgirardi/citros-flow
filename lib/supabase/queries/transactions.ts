@@ -25,6 +25,11 @@ type ListTransactionsBeforeDateInput = {
   boardId: string;
 };
 
+export type TransactionSuggestions = {
+  categories: string[];
+  descriptions: string[];
+};
+
 export async function listTransactionsByBoard({
   boardId,
   endDate,
@@ -68,6 +73,39 @@ export async function listTransactionsBeforeDate({
   }
 
   return data;
+}
+
+export async function listTransactionSuggestionsByBoard(
+  boardId: string
+): Promise<TransactionSuggestions> {
+  await requireCurrentUser();
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("category,description")
+    .eq("board_id", boardId)
+    .order("category", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    categories: uniqueSorted(data.map((transaction) => transaction.category)),
+    descriptions: uniqueSorted(data.map((transaction) => transaction.description)),
+  };
+}
+
+function uniqueSorted(values: string[]) {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
+    )
+  ).sort((first, second) => first.localeCompare(second, "pt-BR"));
 }
 
 export async function createTransactionForCurrentUser(input: CreateTransactionInput) {

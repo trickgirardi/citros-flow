@@ -521,12 +521,12 @@ chore: atualiza dependências
 - [x] Esconder ações de mutação para `viewer`
 
 ### Fase 6 — Entrada Rápida com Sugestões
-- [ ] Criar query de sugestões de categorias por board
-- [ ] Criar query de sugestões de descrições por board
-- [ ] Implementar combobox de Categoria com filtro por digitação
-- [ ] Implementar dropdown de Descrição com filtro por digitação
-- [ ] Ao salvar categoria nova, persistir na própria transação
-- [ ] Não criar tabela de categorias no MVP, salvo decisão explícita
+- [x] Criar query de sugestões de categorias por board
+- [x] Criar query de sugestões de descrições por board
+- [x] Implementar combobox de Categoria com filtro por digitação
+- [x] Implementar dropdown de Descrição com filtro por digitação
+- [x] Ao salvar categoria nova, persistir na própria transação
+- [x] Não criar tabela de categorias no MVP, salvo decisão explícita
 
 ### Fase 7 — Header Operacional
 - [ ] Criar/ajustar `Header` no layout protegido

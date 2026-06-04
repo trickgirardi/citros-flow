@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 type TransactionListPanelProps = {
   boardId: string;
   canMutate: boolean;
+  categorySuggestions: string[];
+  descriptionSuggestions: string[];
   emptyLabel: string;
   groups: TransactionGroup[];
   tone: "entrada" | "saida";
@@ -19,6 +21,8 @@ type TransactionListPanelProps = {
 export function TransactionListPanel({
   boardId,
   canMutate,
+  categorySuggestions,
+  descriptionSuggestions,
   emptyLabel,
   groups,
   tone,
@@ -79,6 +83,8 @@ export function TransactionListPanel({
                         <div className="col-span-3 flex justify-end">
                           <TransactionActions
                             boardId={boardId}
+                            categorySuggestions={categorySuggestions}
+                            descriptionSuggestions={descriptionSuggestions}
                             transaction={transaction}
                           />
                         </div>
