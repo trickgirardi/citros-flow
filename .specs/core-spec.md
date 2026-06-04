@@ -354,11 +354,11 @@ chore: atualiza dependências
 - [x] Tipos TypeScript exportados do Supabase
 
 ### Fase 2 — Dashboard Core
-- [ ] Layout single-screen (100vh, 3 colunas)
-- [ ] EntradasPanel com scroll isolado e agrupamento por categoria
-- [ ] SaidasPanel com scroll isolado e agrupamento por categoria
-- [ ] FechamentoPanel com totais e saldo
-- [ ] Responsividade para mobile, empilhando os panels, mas mantendo o layout single-screen
+- [x] Layout single-screen (100vh, 3 colunas)
+- [x] EntradasPanel com scroll isolado e agrupamento por categoria
+- [x] SaidasPanel com scroll isolado e agrupamento por categoria
+- [x] FechamentoPanel com totais e saldo
+- [x] Responsividade para mobile, empilhando os panels, mas mantendo o layout single-screen
 
 ### Fase 3 — Transações
 - [ ] TransactionModal (Dialog shadcn)

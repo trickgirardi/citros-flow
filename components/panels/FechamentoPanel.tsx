@@ -1,0 +1,65 @@
+import { Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/components/panels/dashboard-data";
+import { cn } from "@/lib/utils";
+
+type FechamentoPanelProps = {
+  balance: number;
+  entradasTotal: number;
+  saidasTotal: number;
+  transactionCount: number;
+};
+
+export function FechamentoPanel({
+  balance,
+  entradasTotal,
+  saidasTotal,
+  transactionCount,
+}: FechamentoPanelProps) {
+  const balanceIsPositive = balance >= 0;
+
+  return (
+    <aside className="flex shrink-0 flex-col rounded-lg border bg-card md:min-h-0">
+      <div className="border-b px-3 py-2">
+        <h2 className="text-sm font-semibold">Fechamento</h2>
+        <p className="text-xs text-muted-foreground">{transactionCount} transacoes</p>
+      </div>
+
+      <div className="grid gap-2 p-3">
+        <SummaryRow label="Total entradas" value={formatCurrency(entradasTotal)} />
+        <SummaryRow label="Total saidas" value={formatCurrency(saidasTotal)} />
+
+        <div className="mt-1 rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Saldo final</p>
+          <p
+            className={cn(
+              "mt-1 text-2xl font-semibold tabular-nums",
+              balanceIsPositive
+                ? "text-emerald-700 dark:text-emerald-300"
+                : "text-rose-700 dark:text-rose-300"
+            )}
+          >
+            {formatCurrency(balance)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-auto border-t p-3">
+        <Button type="button" className="h-9 w-full" disabled>
+          <Plus />
+          Nova Transacao
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm font-semibold tabular-nums">{value}</span>
+    </div>
+  );
+}

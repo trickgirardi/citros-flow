@@ -14,3 +14,21 @@ export async function listBoardsForCurrentUser() {
 
   return data;
 }
+
+export async function getBoardForCurrentUser(boardId: string) {
+  await requireCurrentUser();
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select("*")
+    .eq("id", boardId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
