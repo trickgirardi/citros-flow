@@ -51,6 +51,7 @@ export default async function BoardDashboardPage({ params }: BoardDashboardPageP
         <SaidasPanel groups={groupTransactionsByCategory(saidas)} total={saidasTotal} />
         <FechamentoPanel
           balance={entradasTotal - saidasTotal}
+          boardId={board.id}
           entradasTotal={entradasTotal}
           saidasTotal={saidasTotal}
           transactionCount={transactions.length}

@@ -1,11 +1,10 @@
-import { Plus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/components/panels/dashboard-data";
+import { TransactionModal } from "@/components/modals/TransactionModal";
 import { cn } from "@/lib/utils";
 
 type FechamentoPanelProps = {
   balance: number;
+  boardId: string;
   entradasTotal: number;
   saidasTotal: number;
   transactionCount: number;
@@ -13,6 +12,7 @@ type FechamentoPanelProps = {
 
 export function FechamentoPanel({
   balance,
+  boardId,
   entradasTotal,
   saidasTotal,
   transactionCount,
@@ -46,10 +46,7 @@ export function FechamentoPanel({
       </div>
 
       <div className="mt-auto border-t p-3">
-        <Button type="button" className="h-9 w-full" disabled>
-          <Plus />
-          Nova Transacao
-        </Button>
+        <TransactionModal boardId={boardId} />
       </div>
     </aside>
   );
