@@ -11,17 +11,17 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
-          created_at: string | null;
+          created_at: string;
           id: string;
           name: string;
         };
         Insert: {
-          created_at?: string | null;
+          created_at?: string;
           id?: string;
           name: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: string;
           id?: string;
           name?: string;
         };
@@ -30,19 +30,19 @@ export type Database = {
       boards: {
         Row: {
           account_id: string;
-          created_at: string | null;
+          created_at: string;
           id: string;
           name: string;
         };
         Insert: {
           account_id: string;
-          created_at?: string | null;
+          created_at?: string;
           id?: string;
           name: string;
         };
         Update: {
           account_id?: string;
-          created_at?: string | null;
+          created_at?: string;
           id?: string;
           name?: string;
         };
@@ -61,7 +61,7 @@ export type Database = {
           amount: number;
           board_id: string;
           category: string;
-          created_at: string | null;
+          created_at: string;
           created_by: string;
           date: string;
           description: string;
@@ -72,7 +72,7 @@ export type Database = {
           amount: number;
           board_id: string;
           category: string;
-          created_at?: string | null;
+          created_at?: string;
           created_by: string;
           date: string;
           description: string;
@@ -83,7 +83,7 @@ export type Database = {
           amount?: number;
           board_id?: string;
           category?: string;
-          created_at?: string | null;
+          created_at?: string;
           created_by?: string;
           date?: string;
           description?: string;

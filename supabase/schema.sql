@@ -42,6 +42,11 @@ create index if not exists idx_transactions_board_id on public.transactions(boar
 create index if not exists idx_transactions_created_by on public.transactions(created_by);
 create index if not exists idx_boards_account_id on public.boards(account_id);
 
+revoke all on public.accounts from anon, authenticated;
+revoke all on public.boards from anon, authenticated;
+revoke all on public.transactions from anon, authenticated;
+revoke all on public.user_roles from anon, authenticated;
+
 grant usage on schema public to authenticated;
 grant select on public.accounts to authenticated;
 grant select, insert, update on public.boards to authenticated;

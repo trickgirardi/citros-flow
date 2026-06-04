@@ -76,7 +76,7 @@ citros-flow/
 │   └── utils.ts                    # cn(), formatCurrency(), etc.
 ├── types/
 │   └── database.ts                 # Tipos gerados pelo Supabase CLI
-└── middleware.ts                   # Proteção de rotas via Supabase Auth
+└── proxy.ts                        # Proteção de rotas via Supabase Auth (Next.js 16)
 ```
 
 ### 3.2 Fluxo de Dados
@@ -273,7 +273,7 @@ create policy "usuarios can insert transactions"
 ## 8. Autenticação
 
 - Provider: Supabase Auth (email/password)
-- Proteção de rotas via `middleware.ts`
+- Proteção de rotas via `proxy.ts` (Next.js 16; `middleware.ts` foi substituído)
 - Sessão gerenciada pelo `@supabase/ssr`
 - Redirect automático: não autenticado → `/login`
 
@@ -284,7 +284,7 @@ create policy "usuarios can insert transactions"
 ```bash
 # .env.local
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=     # apenas server-side
 ```
 
@@ -347,17 +347,18 @@ chore: atualiza dependências
 ## 12. Roadmap de Implementação
 
 ### Fase 1 — Fundação
-- [ ] Configurar Supabase (projeto, schema, RLS)
-- [ ] Configurar variáveis de ambiente
-- [ ] Implementar autenticação (login/logout)
-- [ ] Middleware de proteção de rotas
-- [ ] Tipos TypeScript exportados do Supabase
+- [x] Configurar Supabase (projeto, schema, RLS)
+- [x] Configurar variáveis de ambiente
+- [x] Implementar autenticação (login/logout)
+- [x] Proxy de proteção de rotas
+- [x] Tipos TypeScript exportados do Supabase
 
 ### Fase 2 — Dashboard Core
 - [ ] Layout single-screen (100vh, 3 colunas)
 - [ ] EntradasPanel com scroll isolado e agrupamento por categoria
 - [ ] SaidasPanel com scroll isolado e agrupamento por categoria
 - [ ] FechamentoPanel com totais e saldo
+- [ ] Responsividade para mobile, empilhando os panels, mas mantendo o layout single-screen
 
 ### Fase 3 — Transações
 - [ ] TransactionModal (Dialog shadcn)
