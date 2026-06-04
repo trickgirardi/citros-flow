@@ -1,21 +1,33 @@
-# Next.js template
+# Citros Flow
 
-This is a Next.js template with shadcn/ui.
+Base do projeto em Next.js 16 + Supabase.
 
-## Adding components
+## Fase 1 - Fundacao
 
-To add components to your app, run the following command:
+Implementado neste repositório:
+
+- Configuracao Supabase SSR (`lib/supabase/*`)
+- Login/logout com Supabase Auth (`/login` + server actions)
+- Protecao de rotas com `proxy.ts` (Next.js 16)
+- Tipos TypeScript iniciais do banco (`types/database.ts`)
+- SQL de schema + RLS (`supabase/schema.sql`)
+- Variaveis de ambiente em `.env.example`
+
+## Setup
+
+1. Copie `.env.example` para `.env.local` e preencha as chaves do Supabase.
+2. No Supabase SQL Editor, execute `supabase/schema.sql`.
+3. Crie usuarios em `Authentication > Users` e vinculos em `user_roles`.
+4. Rode o projeto:
 
 ```bash
-npx shadcn@latest add button
+pnpm dev
 ```
 
-This will place the ui components in the `components` directory.
+## Gerar tipos oficiais do Supabase
 
-## Using components
+Quando seu projeto Supabase estiver configurado, gere/atualize `types/database.ts`:
 
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
+```bash
+pnpm dlx supabase gen types typescript --project-id <PROJECT_ID> --schema public > types/database.ts
 ```
