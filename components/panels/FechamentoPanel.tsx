@@ -6,6 +6,7 @@ type FechamentoPanelProps = {
   balance: number;
   boardId: string;
   entradasTotal: number;
+  previousBalance: number;
   saidasTotal: number;
   transactionCount: number;
 };
@@ -14,6 +15,7 @@ export function FechamentoPanel({
   balance,
   boardId,
   entradasTotal,
+  previousBalance,
   saidasTotal,
   transactionCount,
 }: FechamentoPanelProps) {
@@ -27,6 +29,7 @@ export function FechamentoPanel({
       </div>
 
       <div className="grid gap-2 p-3">
+        <SummaryRow label="Saldo anterior" value={formatCurrency(previousBalance)} />
         <SummaryRow label="Total entradas" value={formatCurrency(entradasTotal)} />
         <SummaryRow label="Total saidas" value={formatCurrency(saidasTotal)} />
 

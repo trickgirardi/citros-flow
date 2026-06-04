@@ -1,13 +1,25 @@
 import { redirect } from "next/navigation"
 
+import {
+  getMonthScope,
+  getSingleSearchParam,
+} from "@/components/board/month-scope"
 import { listBoardsForCurrentUser } from "@/lib/supabase/queries/boards"
 
-export default async function BoardPage() {
+type BoardPageProps = {
+  searchParams: Promise<{
+    month?: string | string[]
+  }>
+}
+
+export default async function BoardPage({ searchParams }: BoardPageProps) {
+  const { month } = await searchParams
+  const monthScope = getMonthScope(getSingleSearchParam(month))
   const boards = await listBoardsForCurrentUser()
   const firstBoard = boards[0]
 
   if (firstBoard) {
-    redirect(`/board/${firstBoard.id}`)
+    redirect(`/board/${firstBoard.id}?month=${monthScope.monthKey}`)
   }
 
   return (

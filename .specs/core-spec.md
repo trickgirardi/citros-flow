@@ -167,6 +167,8 @@ Regras:
 - Navegação simples: mês anterior, mês seguinte e voltar para mês atual
 - Queries usam intervalo fechado-aberto: `date >= startDate` e `date < endDate`
 - Entradas, saídas e fechamento sempre usam apenas transações do período selecionado
+- Saldo final do mês selecionado considera o saldo acumulado até o mês anterior
+- Fórmula: `saldoFinal = saldoAnterior + entradasDoMes - saidasDoMes`
 
 ### 4.5 UserRole (Permissão)
 Vincula usuário a um board com um nível de acesso.
@@ -500,13 +502,14 @@ chore: atualiza dependências
 - [x] Atualização em tempo real dos painéis
 
 ### Fase 4 — Fechamento Mensal
-- [ ] Atualizar query `listTransactionsByBoard` para receber `startDate` e `endDate`
-- [ ] Criar helper local para parse/format de `YYYY-MM`
-- [ ] Criar `MonthNavigator` no Header
-- [ ] Persistir mês selecionado em query string `?month=YYYY-MM`
-- [ ] Calcular entradas, saídas e saldo apenas para o mês selecionado
-- [ ] Garantir que `/board` redireciona para primeiro board sem perder mês atual
-- [ ] Validar mobile/desktop sem scroll global
+- [x] Atualizar query `listTransactionsByBoard` para receber `startDate` e `endDate`
+- [x] Criar helper local para parse/format de `YYYY-MM`
+- [x] Criar `MonthNavigator` no cabeçalho local do dashboard
+- [x] Persistir mês selecionado em query string `?month=YYYY-MM`
+- [x] Calcular entradas, saídas e saldo apenas para o mês selecionado
+- [x] Considerar saldo acumulado anterior no saldo final do mês vigente
+- [x] Garantir que `/board` redireciona para primeiro board sem perder mês atual
+- [x] Validar mobile/desktop sem scroll global
 
 ### Fase 5 — Editar e Remover Transações
 - [ ] Expandir `transactions.ts` com `updateTransactionForCurrentUser` e `deleteTransactionForCurrentUser`

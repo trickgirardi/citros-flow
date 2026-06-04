@@ -10,7 +10,22 @@ export type CreateTransactionInput = {
   type: "entrada" | "saida";
 };
 
-export async function listTransactionsByBoard(boardId: string) {
+type ListTransactionsByBoardInput = {
+  boardId: string;
+  endDate: string;
+  startDate: string;
+};
+
+type ListTransactionsBeforeDateInput = {
+  beforeDate: string;
+  boardId: string;
+};
+
+export async function listTransactionsByBoard({
+  boardId,
+  endDate,
+  startDate,
+}: ListTransactionsByBoardInput) {
   await requireCurrentUser();
 
   const supabase = await createSupabaseServerClient();
@@ -19,7 +34,30 @@ export async function listTransactionsByBoard(boardId: string) {
     .from("transactions")
     .select("*")
     .eq("board_id", boardId)
+    .gte("date", startDate)
+    .lt("date", endDate)
     .order("date", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function listTransactionsBeforeDate({
+  beforeDate,
+  boardId,
+}: ListTransactionsBeforeDateInput) {
+  await requireCurrentUser();
+
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("amount,type")
+    .eq("board_id", boardId)
+    .lt("date", beforeDate);
 
   if (error) {
     throw error;

@@ -34,3 +34,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temp files
+NU_672958359_01MAI2026_31MAI2026.csv

@@ -57,3 +57,15 @@ export function groupTransactionsByCategory(transactions: Transaction[]) {
 export function sumTransactions(transactions: Transaction[]) {
   return transactions.reduce((total, transaction) => total + transaction.amount, 0);
 }
+
+export function sumTransactionBalance(
+  transactions: Pick<Transaction, "amount" | "type">[]
+) {
+  return transactions.reduce((total, transaction) => {
+    if (transaction.type === "entrada") {
+      return total + transaction.amount;
+    }
+
+    return total - transaction.amount;
+  }, 0);
+}
