@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 type FechamentoPanelProps = {
   balance: number;
   boardId: string;
+  canMutate: boolean;
   entradasTotal: number;
   previousBalance: number;
   saidasTotal: number;
@@ -14,6 +15,7 @@ type FechamentoPanelProps = {
 export function FechamentoPanel({
   balance,
   boardId,
+  canMutate,
   entradasTotal,
   previousBalance,
   saidasTotal,
@@ -48,9 +50,11 @@ export function FechamentoPanel({
         </div>
       </div>
 
-      <div className="mt-auto border-t p-3">
-        <TransactionModal boardId={boardId} />
-      </div>
+      {canMutate ? (
+        <div className="mt-auto border-t p-3">
+          <TransactionModal boardId={boardId} />
+        </div>
+      ) : null}
     </aside>
   );
 }

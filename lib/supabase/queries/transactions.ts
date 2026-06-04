@@ -10,6 +10,10 @@ export type CreateTransactionInput = {
   type: "entrada" | "saida";
 };
 
+export type UpdateTransactionInput = CreateTransactionInput & {
+  transactionId: string;
+};
+
 type ListTransactionsByBoardInput = {
   boardId: string;
   endDate: string;
@@ -89,4 +93,52 @@ export async function createTransactionForCurrentUser(input: CreateTransactionIn
   }
 
   return data;
+}
+
+export async function updateTransactionForCurrentUser(input: UpdateTransactionInput) {
+  await requireCurrentUser();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update({
+      amount: input.amount,
+      category: input.category,
+      date: input.date,
+      description: input.description,
+      type: input.type,
+    })
+    .eq("id", input.transactionId)
+    .eq("board_id", input.boardId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteTransactionForCurrentUser({
+  boardId,
+  transactionId,
+}: {
+  boardId: string;
+  transactionId: string;
+}) {
+  await requireCurrentUser();
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", transactionId)
+    .eq("board_id", boardId)
+    .select("id")
+    .single();
+
+  if (error) {
+    throw error;
+  }
 }

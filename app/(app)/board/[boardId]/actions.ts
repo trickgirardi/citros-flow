@@ -3,12 +3,18 @@
 import { revalidatePath } from "next/cache";
 
 import { getBoardForCurrentUser } from "@/lib/supabase/queries/boards";
-import { createTransactionForCurrentUser } from "@/lib/supabase/queries/transactions";
+import {
+  createTransactionForCurrentUser,
+  deleteTransactionForCurrentUser,
+  updateTransactionForCurrentUser,
+} from "@/lib/supabase/queries/transactions";
 
 export type TransactionFormState = {
   error: string | null;
   success: boolean;
 };
+
+export type DeleteTransactionState = TransactionFormState;
 
 const VALID_TRANSACTION_TYPES = new Set(["entrada", "saida"]);
 
@@ -95,6 +101,107 @@ export async function createTransaction(
   } catch {
     return {
       error: "Nao foi possivel salvar a transacao.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    success: true,
+  };
+}
+
+export async function updateTransaction(
+  _: TransactionFormState,
+  formData: FormData
+): Promise<TransactionFormState> {
+  const transactionId = parseRequiredText(formData.get("transactionId"));
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const type = parseTransactionType(formData.get("type"));
+  const amount = parseAmount(formData.get("amount"));
+  const description = parseRequiredText(formData.get("description"));
+  const category = parseRequiredText(formData.get("category"));
+  const date = parseDate(formData.get("date"));
+
+  if (
+    !transactionId ||
+    !boardId ||
+    !type ||
+    !amount ||
+    !description ||
+    !category ||
+    !date
+  ) {
+    return {
+      error: "Preencha todos os campos com valores validos.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await updateTransactionForCurrentUser({
+      amount,
+      boardId,
+      category,
+      date,
+      description,
+      transactionId,
+      type,
+    });
+  } catch {
+    return {
+      error: "Nao foi possivel atualizar a transacao.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    success: true,
+  };
+}
+
+export async function deleteTransaction(
+  _: DeleteTransactionState,
+  formData: FormData
+): Promise<DeleteTransactionState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const transactionId = parseRequiredText(formData.get("transactionId"));
+
+  if (!boardId || !transactionId) {
+    return {
+      error: "Transacao invalida.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await deleteTransactionForCurrentUser({ boardId, transactionId });
+  } catch {
+    return {
+      error: "Nao foi possivel remover a transacao.",
       success: false,
     };
   }

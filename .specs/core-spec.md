@@ -512,13 +512,13 @@ chore: atualiza dependências
 - [x] Validar mobile/desktop sem scroll global
 
 ### Fase 5 — Editar e Remover Transações
-- [ ] Expandir `transactions.ts` com `updateTransactionForCurrentUser` e `deleteTransactionForCurrentUser`
-- [ ] Ajustar RLS para `admin` e `tesoureiro` poderem editar/remover transações do board
-- [ ] Reaproveitar `TransactionModal` em modo criação e edição
-- [ ] Adicionar ações discretas em cada item de transação
-- [ ] Adicionar confirmação antes de remover
-- [ ] Revalidar rota preservando `boardId` e `month`
-- [ ] Esconder ações de mutação para `viewer`
+- [x] Expandir `transactions.ts` com `updateTransactionForCurrentUser` e `deleteTransactionForCurrentUser`
+- [x] Ajustar RLS para `admin` e `tesoureiro` poderem editar/remover transações do board
+- [x] Reaproveitar `TransactionModal` em modo criação e edição
+- [x] Adicionar ações discretas em cada item de transação
+- [x] Adicionar confirmação antes de remover
+- [x] Revalidar rota preservando `boardId` e `month`
+- [x] Esconder ações de mutação para `viewer`
 
 ### Fase 6 — Entrada Rápida com Sugestões
 - [ ] Criar query de sugestões de categorias por board

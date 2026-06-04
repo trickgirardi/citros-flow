@@ -2,12 +2,15 @@
 
 import { useRef, useState, useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import {
   createTransaction,
   type TransactionFormState,
+  updateTransaction,
 } from "@/app/(app)/board/[boardId]/actions";
+import { getCurrentDateKey } from "@/components/board/month-scope";
+import type { Transaction } from "@/components/panels/dashboard-data";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,15 +28,19 @@ const INITIAL_STATE: TransactionFormState = {
 
 type TransactionModalProps = {
   boardId: string;
+  transaction?: Transaction;
 };
 
-export function TransactionModal({ boardId }: TransactionModalProps) {
+export function TransactionModal({ boardId, transaction }: TransactionModalProps) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+  const isEditing = Boolean(transaction);
   const [state, formAction, isPending] = useActionState(
     async (currentState: TransactionFormState, formData: FormData) => {
-      const nextState = await createTransaction(currentState, formData);
+      const nextState = isEditing
+        ? await updateTransaction(currentState, formData)
+        : await createTransaction(currentState, formData);
 
       if (nextState.success) {
         formRef.current?.reset();
@@ -49,21 +56,39 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" className="h-9 w-full">
-          <Plus data-icon="inline-start" />
-          Nova Transacao
-        </Button>
+        {isEditing ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Editar transacao"
+          >
+            <Pencil data-icon="inline-start" />
+          </Button>
+        ) : (
+          <Button type="button" className="h-9 w-full">
+            <Plus data-icon="inline-start" />
+            Nova Transacao
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nova Transacao</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Editar Transacao" : "Nova Transacao"}
+          </DialogTitle>
           <DialogDescription>
-            Registre entrada ou saida para atualizar o fechamento.
+            {isEditing
+              ? "Atualize os dados desta transacao."
+              : "Registre entrada ou saida para atualizar o fechamento."}
           </DialogDescription>
         </DialogHeader>
 
         <form ref={formRef} action={formAction} className="grid gap-4">
           <input type="hidden" name="boardId" value={boardId} />
+          {transaction ? (
+            <input type="hidden" name="transactionId" value={transaction.id} />
+          ) : null}
 
           <label className="grid gap-1.5 text-sm font-medium">
             Tipo
@@ -71,7 +96,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               name="type"
               required
               className="h-9 rounded-md border bg-background px-3 text-sm"
-              defaultValue="entrada"
+              defaultValue={transaction?.type ?? "entrada"}
             >
               <option value="entrada">Entrada</option>
               <option value="saida">Saida</option>
@@ -88,6 +113,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               step="0.01"
               required
               className="h-9 rounded-md border bg-background px-3 text-sm"
+              defaultValue={transaction?.amount}
               placeholder="0,00"
             />
           </label>
@@ -100,6 +126,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               required
               maxLength={120}
               className="h-9 rounded-md border bg-background px-3 text-sm"
+              defaultValue={transaction?.description}
               placeholder="Ex: Doacao mensal"
             />
           </label>
@@ -112,6 +139,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               required
               maxLength={80}
               className="h-9 rounded-md border bg-background px-3 text-sm"
+              defaultValue={transaction?.category}
               placeholder="Ex: Doacoes"
             />
           </label>
@@ -123,7 +151,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               type="date"
               required
               className="h-9 rounded-md border bg-background px-3 text-sm"
-              defaultValue={new Date().toISOString().slice(0, 10)}
+              defaultValue={transaction?.date ?? getCurrentDateKey()}
             />
           </label>
 
@@ -141,7 +169,7 @@ export function TransactionModal({ boardId }: TransactionModalProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Salvando..." : "Salvar"}
+              {isPending ? "Salvando..." : isEditing ? "Atualizar" : "Salvar"}
             </Button>
           </div>
         </form>

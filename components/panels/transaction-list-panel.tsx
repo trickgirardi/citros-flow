@@ -3,9 +3,12 @@ import {
   formatTransactionDate,
   type TransactionGroup,
 } from "@/components/panels/dashboard-data";
+import { TransactionActions } from "@/components/board/TransactionActions";
 import { cn } from "@/lib/utils";
 
 type TransactionListPanelProps = {
+  boardId: string;
+  canMutate: boolean;
   emptyLabel: string;
   groups: TransactionGroup[];
   tone: "entrada" | "saida";
@@ -14,6 +17,8 @@ type TransactionListPanelProps = {
 };
 
 export function TransactionListPanel({
+  boardId,
+  canMutate,
   emptyLabel,
   groups,
   tone,
@@ -70,6 +75,14 @@ export function TransactionListPanel({
                       >
                         {formatCurrency(transaction.amount)}
                       </span>
+                      {canMutate ? (
+                        <div className="col-span-3 flex justify-end">
+                          <TransactionActions
+                            boardId={boardId}
+                            transaction={transaction}
+                          />
+                        </div>
+                      ) : null}
                     </article>
                   ))}
                 </div>

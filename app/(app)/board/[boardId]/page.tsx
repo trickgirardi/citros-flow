@@ -15,7 +15,10 @@ import {
   sumTransactionBalance,
   sumTransactions,
 } from "@/components/panels/dashboard-data";
-import { getBoardForCurrentUser } from "@/lib/supabase/queries/boards";
+import {
+  canMutateBoardForCurrentUser,
+  getBoardForCurrentUser,
+} from "@/lib/supabase/queries/boards";
 import {
   listTransactionsBeforeDate,
   listTransactionsByBoard,
@@ -42,7 +45,7 @@ export default async function BoardDashboardPage({
     notFound();
   }
 
-  const [transactions, previousTransactions] = await Promise.all([
+  const [transactions, previousTransactions, canMutate] = await Promise.all([
     listTransactionsByBoard({
       boardId: board.id,
       endDate: monthScope.endDate,
@@ -52,6 +55,7 @@ export default async function BoardDashboardPage({
       beforeDate: monthScope.startDate,
       boardId: board.id,
     }),
+    canMutateBoardForCurrentUser(board.id),
   ]);
   const entradas = filterTransactionsByType(transactions, "entrada");
   const saidas = filterTransactionsByType(transactions, "saida");
@@ -82,13 +86,21 @@ export default async function BoardDashboardPage({
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_20rem] md:grid-rows-1">
         <EntradasPanel
+          boardId={board.id}
+          canMutate={canMutate}
           groups={groupTransactionsByCategory(entradas)}
           total={entradasTotal}
         />
-        <SaidasPanel groups={groupTransactionsByCategory(saidas)} total={saidasTotal} />
+        <SaidasPanel
+          boardId={board.id}
+          canMutate={canMutate}
+          groups={groupTransactionsByCategory(saidas)}
+          total={saidasTotal}
+        />
         <FechamentoPanel
           balance={previousBalance + entradasTotal - saidasTotal}
           boardId={board.id}
+          canMutate={canMutate}
           entradasTotal={entradasTotal}
           previousBalance={previousBalance}
           saidasTotal={saidasTotal}

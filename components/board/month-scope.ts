@@ -38,7 +38,11 @@ export function getMonthScope(monthKey: string | null | undefined): MonthScope {
 }
 
 export function getCurrentMonthKey() {
-  return currentMonthFormatter.format(new Date());
+  return formatDateToMonthKey(new Date());
+}
+
+export function getCurrentDateKey() {
+  return formatDateToParts(new Date()).dateKey;
 }
 
 export function parseMonthKey(value: string | null | undefined) {
@@ -59,16 +63,51 @@ export function getSingleSearchParam(value: string | string[] | undefined) {
 
 function shiftMonthKey(monthKey: string, offset: number) {
   const [year, month] = parseMonthParts(monthKey);
-  const date = new Date(Date.UTC(year, month - 1 + offset, 1));
+  const date = new Date(Date.UTC(year, month - 1 + offset, 15, 12));
 
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function formatMonthLabel(monthKey: string) {
   const [year, month] = parseMonthParts(monthKey);
-  const date = new Date(Date.UTC(year, month - 1, 1));
+  const date = new Date(Date.UTC(year, month - 1, 15, 12));
 
   return monthFormatter.format(date);
+}
+
+function formatDateToMonthKey(date: Date) {
+  const { month, year } = formatDateToParts(date);
+
+  return `${year}-${month}`;
+}
+
+function formatDateToParts(date: Date) {
+  const parts = currentMonthFormatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+
+  if (!year || !month) {
+    return {
+      dateKey: date.toISOString().slice(0, 10),
+      month: String(date.getUTCMonth() + 1).padStart(2, "0"),
+      year: String(date.getUTCFullYear()),
+    };
+  }
+
+  return {
+    dateKey: `${year}-${month}-${String(getAppDay(date)).padStart(2, "0")}`,
+    month,
+    year,
+  };
+}
+
+function getAppDay(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    timeZone: APP_TIMEZONE,
+  }).formatToParts(date);
+
+  return Number(parts.find((part) => part.type === "day")?.value ?? date.getUTCDate());
 }
 
 function parseMonthParts(monthKey: string) {

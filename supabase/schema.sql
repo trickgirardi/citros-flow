@@ -67,6 +67,7 @@ drop policy if exists "transactions_select_by_membership" on public.transactions
 drop policy if exists "transactions_insert_for_admin_or_tesoureiro" on public.transactions;
 drop policy if exists "transactions_update_for_admin_or_tesoureiro" on public.transactions;
 drop policy if exists "transactions_delete_admin_only" on public.transactions;
+drop policy if exists "transactions_delete_for_admin_or_tesoureiro" on public.transactions;
 drop policy if exists "user_roles_select_own" on public.user_roles;
 
 -- user_roles: cada usuario ve seus vinculos.
@@ -199,7 +200,7 @@ create policy "transactions_update_for_admin_or_tesoureiro"
     )
   );
 
-create policy "transactions_delete_admin_only"
+create policy "transactions_delete_for_admin_or_tesoureiro"
   on public.transactions
   for delete
   using (
@@ -207,7 +208,7 @@ create policy "transactions_delete_admin_only"
       select 1
       from public.user_roles ur
       where ur.user_id = (select auth.uid())
-        and ur.role = 'admin'
+        and ur.role in ('admin', 'tesoureiro')
         and (ur.board_id = transactions.board_id or ur.board_id is null)
     )
   );
