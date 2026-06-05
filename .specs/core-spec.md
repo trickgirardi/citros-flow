@@ -66,11 +66,12 @@ citros-flow/
 │   ├── modals/
 │   │   └── TransactionModal.tsx
 │   ├── board/
+│   │   ├── BoardCalendarControls.tsx
+│   │   ├── BoardHeader.tsx
 │   │   ├── MonthNavigator.tsx
 │   │   ├── TransactionActions.tsx
 │   │   └── ShareBoardButton.tsx
 │   └── layout/
-│       ├── Header.tsx
 │       └── BoardSelector.tsx
 ├── hooks/
 │   ├── useTransactions.ts
@@ -326,7 +327,7 @@ create policy "usuarios can insert transactions"
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Header: Logo | Board | Mês/Ano | Share | User/Menu  │
+│ Header: Instituição+Board | Mês/Ano | Share | Menu   │
 ├──────────────┬──────────────┬───────────────────────┤
 │   ENTRADAS   │    SAÍDAS    │     FECHAMENTO        │
 │  (scroll)    │  (scroll)    │     (estático)        │
@@ -347,7 +348,17 @@ create policy "usuarios can insert transactions"
 - Painel de Fechamento: estático, sem scroll
 - Agrupamento por `category` dentro de cada painel com separador visual
 - Responsividade: mobile-first, colunas colapsam em telas pequenas
-- Header concentra contexto e comandos globais: usuário, board selecionado, mês/ano, link público e logout
+- Header concentra contexto operacional e comandos globais: board selecionado, mês/ano, link público e logout
+- Header não exibe email do usuário no MVP
+- Header desktop:
+  - esquerda: ícone da instituição + nome do board
+  - centro: navegação de calendário/mês
+  - direita: botão Compartilhar com label + menu hamburguer com opção `Sair`
+- Header mobile:
+  - esquerda: ícone da instituição + nome do board
+  - direita: botão de calendário apenas com ícone, botão compartilhar apenas com ícone, menu hamburguer
+  - botão de calendário abre menu com mês atual, mês anterior, próximo mês e hoje
+- Menu hamburguer abre um menu simples; no MVP contém apenas `Sair`
 - Área principal contém apenas informações e ações do board atual
 - Sem scroll global no dashboard autenticado; scroll fica isolado nos painéis
 
@@ -529,13 +540,17 @@ chore: atualiza dependências
 - [x] Não criar tabela de categorias no MVP, salvo decisão explícita
 
 ### Fase 7 — Header Operacional
-- [ ] Criar/ajustar `Header` no layout protegido
-- [ ] Mover board atual/selector simples para Header
-- [ ] Mover navegação mês/ano para Header
-- [ ] Exibir usuário atual e logout no Header
-- [ ] Exibir gerar/copiar link público no Header
-- [ ] Remover contexto duplicado da área principal
-- [ ] Deixar main apenas com painéis e ações do board
+- [x] Criar/ajustar `Header` no layout protegido
+- [x] Remover email do Header
+- [x] Mover board atual/selector simples para Header operacional
+- [x] Mover navegação mês/ano para Header operacional
+- [x] Desktop: instituição+board à esquerda, calendário no centro, compartilhar+hamburguer à direita
+- [x] Mobile: instituição+board à esquerda, calendário ícone+share ícone+hamburguer à direita
+- [x] Menu de calendário mobile com mês anterior, próximo mês e hoje
+- [x] Menu hamburguer com opção `Sair`
+- [x] Exibir botão de compartilhar no Header operacional
+- [x] Remover contexto duplicado da área principal
+- [x] Deixar main apenas com painéis e ações do board
 
 ### Fase 8 — Link Público View-Only
 - [ ] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
