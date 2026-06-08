@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { requireCurrentUser } from "@/lib/supabase/queries/auth";
 
 export type CreateTransactionInput = {
@@ -68,6 +69,28 @@ export async function listTransactionsByBoard({
   return data;
 }
 
+export async function listTransactionsByBoardWithServiceRole({
+  boardId,
+  endDate,
+  startDate,
+}: ListTransactionsByBoardInput) {
+  const supabase = createSupabaseServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("board_id", boardId)
+    .gte("date", startDate)
+    .lt("date", endDate)
+    .order("date", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 export async function listTransactionsBeforeDate({
   beforeDate,
   boardId,
@@ -75,6 +98,25 @@ export async function listTransactionsBeforeDate({
   await requireCurrentUser();
 
   const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("amount,type")
+    .eq("board_id", boardId)
+    .lt("date", beforeDate);
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function listTransactionsBeforeDateWithServiceRole({
+  beforeDate,
+  boardId,
+}: ListTransactionsBeforeDateInput) {
+  const supabase = createSupabaseServiceRoleClient();
 
   const { data, error } = await supabase
     .from("transactions")

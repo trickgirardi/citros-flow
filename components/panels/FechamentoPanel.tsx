@@ -1,27 +1,27 @@
-import { formatCurrency } from "@/components/panels/dashboard-data";
-import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal";
+import { formatCurrency } from "@/components/panels/dashboard-data"
+import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal"
 import {
   type ClosingCategorySummary,
   MonthlyClosingImageModal,
-} from "@/components/board/MonthlyClosingImageModal";
-import { TransactionModal } from "@/components/modals/TransactionModal";
-import { cn } from "@/lib/utils";
+} from "@/components/board/MonthlyClosingImageModal"
+import { TransactionModal } from "@/components/modals/TransactionModal"
+import { cn } from "@/lib/utils"
 
 type FechamentoPanelProps = {
-  balance: number;
-  boardName: string;
-  boardId: string;
-  canMutate: boolean;
-  categorySuggestions: string[];
-  descriptionSuggestions: string[];
-  entradaCategories: ClosingCategorySummary[];
-  entradasTotal: number;
-  monthLabel: string;
-  previousBalance: number;
-  saidaCategories: ClosingCategorySummary[];
-  saidasTotal: number;
-  transactionCount: number;
-};
+  balance: number
+  boardName: string
+  boardId: string
+  canMutate: boolean
+  categorySuggestions: string[]
+  descriptionSuggestions: string[]
+  entradaCategories: ClosingCategorySummary[]
+  entradasTotal: number
+  monthLabel: string
+  previousBalance: number
+  saidaCategories: ClosingCategorySummary[]
+  saidasTotal: number
+  transactionCount: number
+}
 
 export function FechamentoPanel({
   balance,
@@ -38,21 +38,29 @@ export function FechamentoPanel({
   saidasTotal,
   transactionCount,
 }: FechamentoPanelProps) {
-  const balanceIsPositive = balance >= 0;
+  const balanceIsPositive = balance >= 0
 
   return (
     <aside className="flex shrink-0 flex-col rounded-lg border bg-card md:min-h-0">
       <div className="border-b px-3 py-2">
         <h2 className="text-sm font-semibold">Fechamento</h2>
-        <p className="text-xs text-muted-foreground">{transactionCount} transacoes</p>
+        <p className="text-xs text-muted-foreground">
+          {transactionCount} transacoes
+        </p>
       </div>
 
       <div className="grid gap-2 p-3">
-        <SummaryRow label="Saldo anterior" value={formatCurrency(previousBalance)} />
-        <SummaryRow label="Total entradas" value={formatCurrency(entradasTotal)} />
+        <SummaryRow
+          label="Saldo anterior"
+          value={formatCurrency(previousBalance)}
+        />
+        <SummaryRow
+          label="Total entradas"
+          value={formatCurrency(entradasTotal)}
+        />
         <SummaryRow label="Total saidas" value={formatCurrency(saidasTotal)} />
 
-        <div className="mt-1 rounded-md border bg-background p-3">
+        <div className="mt-1 flex flex-row items-center justify-between rounded-md border bg-background pr-2">
           <p className="text-xs text-muted-foreground">Saldo final</p>
           <p
             className={cn(
@@ -67,15 +75,15 @@ export function FechamentoPanel({
         </div>
       </div>
 
-      <div className="mt-auto grid gap-2 border-t p-3">
-        <MonthlyClosingImageModal
-          boardName={boardName}
-          entradas={entradaCategories}
-          monthLabel={monthLabel}
-          previousBalance={previousBalance}
-          saidas={saidaCategories}
-        />
-        {canMutate ? (
+      {canMutate ? (
+        <div className="mt-auto grid gap-2 border-t p-3">
+          <MonthlyClosingImageModal
+            boardName={boardName}
+            entradas={entradaCategories}
+            monthLabel={monthLabel}
+            previousBalance={previousBalance}
+            saidas={saidaCategories}
+          />
           <>
             <TransactionModal
               boardId={boardId}
@@ -84,10 +92,10 @@ export function FechamentoPanel({
             />
             <ImportNubankCsvModal boardId={boardId} />
           </>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </aside>
-  );
+  )
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
@@ -96,5 +104,5 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
-  );
+  )
 }

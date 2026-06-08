@@ -1,23 +1,34 @@
 "use client"
 
 import * as React from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
-function ThemeProvider({
-  children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
+type ResolvedTheme = "dark" | "light"
+
+const THEME_STORAGE_KEY = "theme"
+
+function ThemeProvider({ children }: React.PropsWithChildren) {
+  React.useEffect(() => {
+    const storedTheme = getStoredTheme()
+    const nextTheme = storedTheme ?? getSystemTheme()
+
+    applyTheme(nextTheme)
+  }, [])
+
+  const toggleTheme = React.useCallback(() => {
+    const currentTheme = document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light"
+    const nextTheme = currentTheme === "dark" ? "light" : "dark"
+
+    applyTheme(nextTheme)
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+  }, [])
+
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      {...props}
-    >
-      <ThemeHotkey />
+    <>
+      <ThemeHotkey onToggleTheme={toggleTheme} />
       {children}
-    </NextThemesProvider>
+    </>
   )
 }
 
@@ -34,9 +45,7 @@ function isTypingTarget(target: EventTarget | null) {
   )
 }
 
-function ThemeHotkey() {
-  const { resolvedTheme, setTheme } = useTheme()
-
+function ThemeHotkey({ onToggleTheme }: { onToggleTheme: () => void }) {
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.repeat) {
@@ -55,7 +64,7 @@ function ThemeHotkey() {
         return
       }
 
-      setTheme(resolvedTheme === "dark" ? "light" : "dark")
+      onToggleTheme()
     }
 
     window.addEventListener("keydown", onKeyDown)
@@ -63,9 +72,24 @@ function ThemeHotkey() {
     return () => {
       window.removeEventListener("keydown", onKeyDown)
     }
-  }, [resolvedTheme, setTheme])
+  }, [onToggleTheme])
 
   return null
+}
+
+function getStoredTheme(): ResolvedTheme | null {
+  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+
+  return storedTheme === "dark" || storedTheme === "light" ? storedTheme : null
+}
+
+function getSystemTheme(): ResolvedTheme {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
+function applyTheme(theme: ResolvedTheme) {
+  document.documentElement.classList.toggle("dark", theme === "dark")
+  document.documentElement.style.colorScheme = theme
 }
 
 export { ThemeProvider }

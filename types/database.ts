@@ -56,6 +56,44 @@ export type Database = {
           },
         ];
       };
+      board_share_links: {
+        Row: {
+          board_id: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string | null;
+          id: string;
+          revoked_at: string | null;
+          token_hash: string;
+        };
+        Insert: {
+          board_id: string;
+          created_at?: string;
+          created_by: string;
+          expires_at?: string | null;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          board_id?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string | null;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "board_share_links_board_id_fkey";
+            columns: ["board_id"];
+            isOneToOne: false;
+            referencedRelation: "boards";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       transactions: {
         Row: {
           amount: number;

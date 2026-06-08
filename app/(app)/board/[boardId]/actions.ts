@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createShareToken } from "@/lib/share-token";
 import { getBoardForCurrentUser } from "@/lib/supabase/queries/boards";
+import { createBoardShareLinkForCurrentUser } from "@/lib/supabase/queries/share-links";
 import {
   createTransactionForCurrentUser,
   createTransactionsForCurrentUser,
@@ -23,6 +25,10 @@ export type UpdateTransactionDescriptionState = TransactionFormState;
 
 export type BulkUpdateTransactionCategoryState = TransactionFormState & {
   updatedCount: number;
+};
+
+export type CreateShareLinkState = TransactionFormState & {
+  url: string | null;
 };
 
 export type ImportNubankCsvState = TransactionFormState & {
@@ -67,6 +73,16 @@ function parseDate(value: FormDataEntryValue | null) {
   }
 
   return date;
+}
+
+function getSafeOrigin(value: FormDataEntryValue | null) {
+  const origin = value?.toString();
+
+  if (!origin || !/^https?:\/\/[^/]+$/.test(origin)) {
+    return null;
+  }
+
+  return origin;
 }
 
 function parseNubankDate(value: string) {
@@ -230,6 +246,53 @@ export async function createTransaction(
   return {
     error: null,
     success: true,
+  };
+}
+
+export async function createShareLink(
+  _: CreateShareLinkState,
+  formData: FormData
+): Promise<CreateShareLinkState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const origin = getSafeOrigin(formData.get("origin"));
+
+  if (!boardId || !origin) {
+    return {
+      error: "Nao foi possivel gerar o link.",
+      success: false,
+      url: null,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+      url: null,
+    };
+  }
+
+  const token = createShareToken();
+
+  try {
+    await createBoardShareLinkForCurrentUser({
+      boardId,
+      token,
+    });
+  } catch {
+    return {
+      error: "Nao foi possivel salvar o link.",
+      success: false,
+      url: null,
+    };
+  }
+
+  return {
+    error: null,
+    success: true,
+    url: `${origin}/share/${token}`,
   };
 }
 

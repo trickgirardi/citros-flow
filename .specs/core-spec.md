@@ -431,6 +431,7 @@ create policy "usuarios can insert transactions"
   - botão nova transação
   - editar/remover
   - board selector
+  - gerar imagem de fechamento
 - Página pública mantém navegação mensal simples
 - Se token inválido, expirado ou revogado: renderizar `notFound()`
 
@@ -661,14 +662,15 @@ chore: atualiza dependências
 - [x] Não persistir valores temporários no DB
 
 ### Fase 12 — Link Público View-Only
-- [ ] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
-- [ ] Criar client server-only para operação segura com service role
-- [ ] Criar server action para gerar/copiar link público
-- [ ] Criar rota pública `/share/[token]`
-- [ ] Validar token por hash e carregar board/transações do mês
-- [ ] Renderizar dashboard view-only sem ações de mutação
-- [ ] Retornar `notFound()` para token inválido, expirado ou revogado
-- [ ] Garantir que token cru nunca é salvo no banco
+- [x] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
+- [x] Criar client server-only para operação segura com service role
+- [x] Criar server action para gerar/copiar link público
+- [x] Criar rota pública `/share/[token]`
+- [x] Validar token por hash e carregar board/transações do mês
+- [x] Renderizar dashboard view-only sem ações de mutação
+- [x] Esconder geração de imagem de fechamento na visualização pública
+- [x] Retornar `notFound()` para token inválido, expirado ou revogado
+- [x] Garantir que token cru nunca é salvo no banco
 
 ### Fase 13 — Validação de Lançamento MVP
 - [ ] Rodar `pnpm typecheck`

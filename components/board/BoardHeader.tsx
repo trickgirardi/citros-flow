@@ -30,10 +30,10 @@ export function BoardHeader({ boardId, boardName }: BoardHeaderProps) {
           <BoardCalendarControls boardId={boardId} />
         </div>
         <span className="hidden sm:inline-flex">
-          <ShareBoardButton />
+          <ShareBoardButton boardId={boardId} />
         </span>
         <span className="inline-flex sm:hidden">
-          <ShareBoardButton showLabel={false} />
+          <ShareBoardButton boardId={boardId} showLabel={false} />
         </span>
         <details className="relative">
           <summary className="flex h-8 cursor-pointer list-none items-center justify-center rounded-md border bg-background px-2">
