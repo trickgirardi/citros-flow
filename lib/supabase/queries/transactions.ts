@@ -14,6 +14,8 @@ export type UpdateTransactionInput = CreateTransactionInput & {
   transactionId: string;
 };
 
+export type BulkCreateTransactionInput = Omit<CreateTransactionInput, "boardId">;
+
 type ListTransactionsByBoardInput = {
   boardId: string;
   endDate: string;
@@ -125,6 +127,38 @@ export async function createTransactionForCurrentUser(input: CreateTransactionIn
     })
     .select()
     .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function createTransactionsForCurrentUser({
+  boardId,
+  transactions,
+}: {
+  boardId: string;
+  transactions: BulkCreateTransactionInput[];
+}) {
+  const user = await requireCurrentUser();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert(
+      transactions.map((transaction) => ({
+        amount: transaction.amount,
+        board_id: boardId,
+        category: transaction.category,
+        created_by: user.id,
+        date: transaction.date,
+        description: transaction.description,
+        type: transaction.type,
+      }))
+    )
+    .select("id");
 
   if (error) {
     throw error;

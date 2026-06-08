@@ -68,6 +68,7 @@ citros-flow/
 │   ├── board/
 │   │   ├── BoardCalendarControls.tsx
 │   │   ├── BoardHeader.tsx
+│   │   ├── ImportNubankCsvModal.tsx
 │   │   ├── MonthNavigator.tsx
 │   │   ├── TransactionActions.tsx
 │   │   └── ShareBoardButton.tsx
@@ -412,6 +413,25 @@ create policy "usuarios can insert transactions"
 - Página pública mantém navegação mensal simples
 - Se token inválido, expirado ou revogado: renderizar `notFound()`
 
+### 7.9 Importação de Extrato CSV Nubank
+- Objetivo: acelerar lançamentos usando extrato Nubank em CSV enviado pelo usuário
+- Arquivo esperado: CSV com cabeçalho `Data,Valor,Identificador,Descrição`
+- Exemplo de linha:
+  - `01/05/2026,180.00,69f48267-ebdd-4b8f-9b4d-6185ecbdce00,Transferência recebida pelo Pix - ...`
+- Campos usados pelo sistema:
+  - `Data` → `transactions.date`
+  - `Valor` → `transactions.amount`
+  - `Descrição` → `transactions.description`
+- Campo `Identificador` é ignorado no MVP
+- Valor positivo cria transação `entrada`
+- Valor negativo cria transação `saida`
+- `amount` é salvo sempre como valor absoluto
+- Categoria padrão para linhas importadas: `Dados importados`
+- MVP não faz deduplicação; importar o mesmo arquivo novamente cria novas transações
+- Importação respeita RLS e só aparece para roles com permissão de mutação (`admin` e `tesoureiro`)
+- Após importação, dashboard revalida; transações aparecem nos meses correspondentes às datas do CSV
+- Erros de formato devem retornar feedback claro sem quebrar o dashboard
+
 ---
 
 ## 8. Autenticação
@@ -552,7 +572,20 @@ chore: atualiza dependências
 - [x] Remover contexto duplicado da área principal
 - [x] Deixar main apenas com painéis e ações do board
 
-### Fase 8 — Link Público View-Only
+### Fase 8 — Importar Extrato CSV Nubank
+- [x] Criar parser local para CSV Nubank
+- [x] Aceitar upload de arquivo `.csv` pelo usuário
+- [x] Ignorar coluna `Identificador`
+- [x] Converter `Data` de `DD/MM/YYYY` para `YYYY-MM-DD`
+- [x] Converter `Valor` positivo para `entrada` e negativo para `saida`
+- [x] Salvar `amount` como valor absoluto
+- [x] Salvar categoria como `Dados importados`
+- [x] Inserir transações em lote via Supabase respeitando RLS
+- [x] Revalidar dashboard após importação
+- [x] Exibir feedback de sucesso/erro para o usuário
+- [x] Não implementar deduplicação nesta fase
+
+### Fase 9 — Link Público View-Only
 - [ ] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
 - [ ] Criar client server-only para operação segura com service role
 - [ ] Criar server action para gerar/copiar link público
@@ -562,13 +595,14 @@ chore: atualiza dependências
 - [ ] Retornar `notFound()` para token inválido, expirado ou revogado
 - [ ] Garantir que token cru nunca é salvo no banco
 
-### Fase 9 — Validação de Lançamento MVP
+### Fase 10 — Validação de Lançamento MVP
 - [ ] Rodar `pnpm typecheck`
 - [ ] Rodar `pnpm lint`
 - [ ] Rodar `pnpm build`
 - [ ] Rodar Supabase advisors após migrações
 - [ ] Testar usuário com board: login → `/board` → mês atual
 - [ ] Testar criar, editar e remover transação no mês selecionado
+- [ ] Testar importar CSV Nubank com entradas e saídas
 - [ ] Testar sugestões de categoria/descrição com histórico real
 - [ ] Testar navegação mês anterior/próximo sem misturar totais
 - [ ] Testar link público sem login e sem ações de mutação

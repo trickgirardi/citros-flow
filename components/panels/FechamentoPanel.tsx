@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/components/panels/dashboard-data";
+import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal";
 import { TransactionModal } from "@/components/modals/TransactionModal";
 import { cn } from "@/lib/utils";
 
@@ -55,12 +56,13 @@ export function FechamentoPanel({
       </div>
 
       {canMutate ? (
-        <div className="mt-auto border-t p-3">
+        <div className="mt-auto grid gap-2 border-t p-3">
           <TransactionModal
             boardId={boardId}
             categorySuggestions={categorySuggestions}
             descriptionSuggestions={descriptionSuggestions}
           />
+          <ImportNubankCsvModal boardId={boardId} />
         </div>
       ) : null}
     </aside>

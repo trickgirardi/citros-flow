@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getBoardForCurrentUser } from "@/lib/supabase/queries/boards";
 import {
   createTransactionForCurrentUser,
+  createTransactionsForCurrentUser,
   deleteTransactionForCurrentUser,
+  type BulkCreateTransactionInput,
   updateTransactionForCurrentUser,
 } from "@/lib/supabase/queries/transactions";
 
@@ -16,7 +18,12 @@ export type TransactionFormState = {
 
 export type DeleteTransactionState = TransactionFormState;
 
+export type ImportNubankCsvState = TransactionFormState & {
+  importedCount: number;
+};
+
 const VALID_TRANSACTION_TYPES = new Set(["entrada", "saida"]);
+const IMPORTED_CATEGORY = "Dados importados";
 
 function parseTransactionType(value: FormDataEntryValue | null) {
   const type = value?.toString();
@@ -53,6 +60,112 @@ function parseDate(value: FormDataEntryValue | null) {
   }
 
   return date;
+}
+
+function parseNubankDate(value: string) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const [, day, month, year] = match;
+  const date = `${year}-${month}-${day}`;
+
+  if (Number.isNaN(new Date(`${date}T00:00:00`).getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function parseNubankAmount(value: string) {
+  const amount = Number(value.trim().replace(",", "."));
+
+  if (!Number.isFinite(amount) || amount === 0) {
+    return null;
+  }
+
+  return {
+    amount: Math.round(Math.abs(amount) * 100) / 100,
+    type: amount > 0 ? "entrada" : "saida",
+  } satisfies Pick<BulkCreateTransactionInput, "amount" | "type">;
+}
+
+function parseCsvLine(line: string) {
+  const fields: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    const nextCharacter = line[index + 1];
+
+    if (character === "\"" && inQuotes && nextCharacter === "\"") {
+      field += "\"";
+      index += 1;
+      continue;
+    }
+
+    if (character === "\"") {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (character === "," && !inQuotes) {
+      fields.push(field);
+      field = "";
+      continue;
+    }
+
+    field += character;
+  }
+
+  fields.push(field);
+
+  return fields.map((value) => value.trim());
+}
+
+function parseNubankCsv(content: string): BulkCreateTransactionInput[] {
+  const lines = content
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) {
+    throw new Error("Arquivo CSV vazio.");
+  }
+
+  const header = parseCsvLine(lines[0]).map((field) => field.toLowerCase());
+
+  if (
+    header[0] !== "data" ||
+    header[1] !== "valor" ||
+    header[2] !== "identificador" ||
+    header[3] !== "descrição"
+  ) {
+    throw new Error("Cabecalho CSV invalido.");
+  }
+
+  return lines.slice(1).map((line, index) => {
+    const fields = parseCsvLine(line);
+    const date = parseNubankDate(fields[0] ?? "");
+    const amountInfo = parseNubankAmount(fields[1] ?? "");
+    const description = fields.slice(3).join(",").trim();
+
+    if (!date || !amountInfo || !description) {
+      throw new Error(`Linha ${index + 2} invalida.`);
+    }
+
+    return {
+      amount: amountInfo.amount,
+      category: IMPORTED_CATEGORY,
+      date,
+      description,
+      type: amountInfo.type,
+    };
+  });
 }
 
 export async function createTransaction(
@@ -210,6 +323,65 @@ export async function deleteTransaction(
 
   return {
     error: null,
+    success: true,
+  };
+}
+
+export async function importNubankCsv(
+  _: ImportNubankCsvState,
+  formData: FormData
+): Promise<ImportNubankCsvState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const file = formData.get("csvFile");
+
+  if (!boardId || !file || typeof file === "string" || typeof file.text !== "function") {
+    return {
+      error: "Selecione um arquivo CSV valido.",
+      importedCount: 0,
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      importedCount: 0,
+      success: false,
+    };
+  }
+
+  let transactions: BulkCreateTransactionInput[];
+
+  try {
+    transactions = parseNubankCsv(await file.text());
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "CSV invalido.",
+      importedCount: 0,
+      success: false,
+    };
+  }
+
+  try {
+    await createTransactionsForCurrentUser({
+      boardId,
+      transactions,
+    });
+  } catch {
+    return {
+      error: "Nao foi possivel importar o CSV.",
+      importedCount: 0,
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    importedCount: transactions.length,
     success: true,
   };
 }
