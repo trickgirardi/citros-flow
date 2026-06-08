@@ -8,6 +8,7 @@ import {
   createTransactionsForCurrentUser,
   deleteTransactionForCurrentUser,
   type BulkCreateTransactionInput,
+  updateTransactionDescriptionForCurrentUser,
   updateTransactionForCurrentUser,
 } from "@/lib/supabase/queries/transactions";
 
@@ -17,6 +18,7 @@ export type TransactionFormState = {
 };
 
 export type DeleteTransactionState = TransactionFormState;
+export type UpdateTransactionDescriptionState = TransactionFormState;
 
 export type ImportNubankCsvState = TransactionFormState & {
   importedCount: number;
@@ -275,6 +277,51 @@ export async function updateTransaction(
   } catch {
     return {
       error: "Nao foi possivel atualizar a transacao.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    success: true,
+  };
+}
+
+export async function updateTransactionDescription(
+  _: UpdateTransactionDescriptionState,
+  formData: FormData
+): Promise<UpdateTransactionDescriptionState> {
+  const transactionId = parseRequiredText(formData.get("transactionId"));
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const description = parseRequiredText(formData.get("description"));
+
+  if (!transactionId || !boardId || !description || description.length > 120) {
+    return {
+      error: "Descricao invalida.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await updateTransactionDescriptionForCurrentUser({
+      boardId,
+      description,
+      transactionId,
+    });
+  } catch {
+    return {
+      error: "Nao foi possivel atualizar a descricao.",
       success: false,
     };
   }

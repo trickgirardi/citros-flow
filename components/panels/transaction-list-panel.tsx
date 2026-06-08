@@ -3,6 +3,7 @@ import {
   formatTransactionDate,
   type TransactionGroup,
 } from "@/components/panels/dashboard-data";
+import { InlineDescriptionEditor } from "@/components/board/InlineDescriptionEditor";
 import { TransactionActions } from "@/components/board/TransactionActions";
 import { cn } from "@/lib/utils";
 
@@ -71,9 +72,18 @@ export function TransactionListPanel({
                       <span className="text-xs text-muted-foreground">
                         {formatTransactionDate(transaction.date)}
                       </span>
-                      <span className="min-w-0 truncate text-sm">
-                        {transaction.description}
-                      </span>
+                      {canMutate ? (
+                        <InlineDescriptionEditor
+                          key={transaction.description}
+                          boardId={boardId}
+                          description={transaction.description}
+                          transactionId={transaction.id}
+                        />
+                      ) : (
+                        <span className="min-w-0 truncate text-sm">
+                          {transaction.description}
+                        </span>
+                      )}
                       <span
                         className={cn("text-xs font-semibold tabular-nums", amountClassName)}
                       >

@@ -14,6 +14,12 @@ export type UpdateTransactionInput = CreateTransactionInput & {
   transactionId: string;
 };
 
+export type UpdateTransactionDescriptionInput = {
+  boardId: string;
+  description: string;
+  transactionId: string;
+};
+
 export type BulkCreateTransactionInput = Omit<CreateTransactionInput, "boardId">;
 
 type ListTransactionsByBoardInput = {
@@ -183,6 +189,29 @@ export async function updateTransactionForCurrentUser(input: UpdateTransactionIn
     .eq("id", input.transactionId)
     .eq("board_id", input.boardId)
     .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function updateTransactionDescriptionForCurrentUser({
+  boardId,
+  description,
+  transactionId,
+}: UpdateTransactionDescriptionInput) {
+  await requireCurrentUser();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update({ description })
+    .eq("id", transactionId)
+    .eq("board_id", boardId)
+    .select("id")
     .single();
 
   if (error) {

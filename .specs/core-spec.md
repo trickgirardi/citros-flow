@@ -69,6 +69,7 @@ citros-flow/
 │   │   ├── BoardCalendarControls.tsx
 │   │   ├── BoardHeader.tsx
 │   │   ├── ImportNubankCsvModal.tsx
+│   │   ├── InlineDescriptionEditor.tsx
 │   │   ├── MonthNavigator.tsx
 │   │   ├── TransactionActions.tsx
 │   │   └── ShareBoardButton.tsx
@@ -401,6 +402,14 @@ create policy "usuarios can insert transactions"
 - Remover pede confirmação antes de excluir
 - Remoção e edição respeitam RLS e role do usuário
 - Viewer não vê ações de mutação
+- Descrição pode ser editada rapidamente direto no dashboard
+- Ao clicar/focar no campo de descrição, o campo entra em modo edição inline
+- Modo edição inline mostra ícones discretos no canto direito do input:
+  - confirmar alteração
+  - cancelar modificação
+- Confirmar salva apenas `description`; categoria, data, tipo e valor permanecem inalterados
+- Cancelar restaura a descrição original sem chamada ao servidor
+- Edição inline respeita as mesmas permissões de mutação (`admin` e `tesoureiro`)
 
 ### 7.8 Link Público View-Only
 - Header mostra comando para gerar/copiar link público do board atual
@@ -585,7 +594,17 @@ chore: atualiza dependências
 - [x] Exibir feedback de sucesso/erro para o usuário
 - [x] Não implementar deduplicação nesta fase
 
-### Fase 9 — Link Público View-Only
+### Fase 9 — Edição Rápida de Descrição
+- [x] Criar server action para atualizar apenas `description`
+- [x] Criar query dedicada para update parcial da descrição
+- [x] Renderizar descrição como input editável no dashboard
+- [x] Ao focar/clicar, exibir botões de confirmar e cancelar no canto direito do input
+- [x] Confirmar salva descrição e revalida dashboard
+- [x] Cancelar descarta alteração local
+- [x] Esconder edição inline para `viewer`
+- [x] Manter modal completo para editar os demais campos
+
+### Fase 10 — Link Público View-Only
 - [ ] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
 - [ ] Criar client server-only para operação segura com service role
 - [ ] Criar server action para gerar/copiar link público
@@ -595,13 +614,14 @@ chore: atualiza dependências
 - [ ] Retornar `notFound()` para token inválido, expirado ou revogado
 - [ ] Garantir que token cru nunca é salvo no banco
 
-### Fase 10 — Validação de Lançamento MVP
+### Fase 11 — Validação de Lançamento MVP
 - [ ] Rodar `pnpm typecheck`
 - [ ] Rodar `pnpm lint`
 - [ ] Rodar `pnpm build`
 - [ ] Rodar Supabase advisors após migrações
 - [ ] Testar usuário com board: login → `/board` → mês atual
 - [ ] Testar criar, editar e remover transação no mês selecionado
+- [ ] Testar edição rápida de descrição com confirmar/cancelar
 - [ ] Testar importar CSV Nubank com entradas e saídas
 - [ ] Testar sugestões de categoria/descrição com histórico real
 - [ ] Testar navegação mês anterior/próximo sem misturar totais
