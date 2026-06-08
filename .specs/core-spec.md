@@ -68,6 +68,7 @@ citros-flow/
 │   ├── board/
 │   │   ├── BoardCalendarControls.tsx
 │   │   ├── BoardHeader.tsx
+│   │   ├── MonthlyClosingImageModal.tsx
 │   │   ├── ImportNubankCsvModal.tsx
 │   │   ├── InlineDescriptionEditor.tsx
 │   │   ├── MonthNavigator.tsx
@@ -410,6 +411,17 @@ create policy "usuarios can insert transactions"
 - Confirmar salva apenas `description`; categoria, data, tipo e valor permanecem inalterados
 - Cancelar restaura a descrição original sem chamada ao servidor
 - Edição inline respeita as mesmas permissões de mutação (`admin` e `tesoureiro`)
+- Categoria pode ser alterada em lote por seleção múltipla de transações
+- Seleção múltipla deve usar checkboxes discretos por linha e controle de selecionar/limpar seleção no painel
+- Clicar no card da transação também alterna seleção, exceto quando o clique ocorrer em inputs, botões ou ações interativas
+- Ao selecionar transações, exibir barra contextual com:
+  - quantidade selecionada
+  - campo de categoria com sugestões já existentes
+  - ação para aplicar categoria
+  - ação para limpar seleção
+- Aplicar categoria atualiza apenas `category` das transações selecionadas
+- Após aplicar, seleção é limpa e dashboard revalida
+- Viewer não vê checkboxes nem barra de edição em lote
 
 ### 7.8 Link Público View-Only
 - Header mostra comando para gerar/copiar link público do board atual
@@ -440,6 +452,29 @@ create policy "usuarios can insert transactions"
 - Importação respeita RLS e só aparece para roles com permissão de mutação (`admin` e `tesoureiro`)
 - Após importação, dashboard revalida; transações aparecem nos meses correspondentes às datas do CSV
 - Erros de formato devem retornar feedback claro sem quebrar o dashboard
+
+### 7.10 Imagem de Fechamento Mensal
+- Objetivo: gerar arquivo de imagem (`.png`) com resumo mensal para compartilhamento externo
+- Geração acontece no browser; não cria registro no banco e não exige dependência nova
+- Botão fica no painel de Fechamento como ação operacional
+- Antes de gerar a imagem, abrir modal com campos temporários:
+  - aluguel
+  - conta de água
+  - conta de luz
+  - entrada extra opcional: categoria + valor
+  - saída extra opcional: categoria + valor
+- Valores temporários entram apenas no cálculo/arte do fechamento gerado
+- Valores temporários não são salvos no DB e não alteram o dashboard
+- Aluguel, água e luz entram junto das saídas por categoria
+- Entrada extra soma nas entradas; saída extra soma nas saídas
+- Imagem deve conter:
+  - cabeçalho: `Fluxo de caixa`, nome do board, mês/ano
+  - lado esquerdo: entradas por categoria
+  - lado direito: saídas por categoria, incluindo ajustes temporários
+  - rodapé/resumo: saldo anterior, entradas, saídas, saldo final
+- O saldo final da imagem usa: `saldo anterior + entradas ajustadas - saídas ajustadas`
+- Categorias repetidas devem ser agregadas antes de desenhar a imagem
+- O arquivo gerado deve ser baixado com nome legível contendo board e mês
 
 ---
 
@@ -604,7 +639,28 @@ chore: atualiza dependências
 - [x] Esconder edição inline para `viewer`
 - [x] Manter modal completo para editar os demais campos
 
-### Fase 10 — Link Público View-Only
+### Fase 10 — Alteração de Categoria em Lote
+- [x] Criar query para atualizar categoria de múltiplas transações do board
+- [x] Criar server action para aplicar categoria em lote
+- [x] Adicionar checkbox por transação para usuários com permissão de mutação
+- [x] Permitir selecionar transação clicando no card sem sobrepor inputs/botões
+- [x] Adicionar controle de selecionar/limpar transações visíveis no painel
+- [x] Exibir barra contextual apenas quando houver seleção
+- [x] Usar input de categoria com sugestões existentes
+- [x] Aplicar categoria, limpar seleção e revalidar dashboard
+- [x] Esconder seleção múltipla para `viewer`
+
+### Fase 11 — Imagem de Fechamento Mensal
+- [x] Criar modal para ajustes temporários de fechamento
+- [x] Receber aluguel, água e luz como saídas temporárias
+- [x] Receber entrada extra opcional com categoria e valor
+- [x] Receber saída extra opcional com categoria e valor
+- [x] Agregar entradas e saídas por categoria
+- [x] Gerar PNG client-side com cabeçalho, colunas e resumo final
+- [x] Baixar imagem com nome legível
+- [x] Não persistir valores temporários no DB
+
+### Fase 12 — Link Público View-Only
 - [ ] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`
 - [ ] Criar client server-only para operação segura com service role
 - [ ] Criar server action para gerar/copiar link público
@@ -614,7 +670,7 @@ chore: atualiza dependências
 - [ ] Retornar `notFound()` para token inválido, expirado ou revogado
 - [ ] Garantir que token cru nunca é salvo no banco
 
-### Fase 11 — Validação de Lançamento MVP
+### Fase 13 — Validação de Lançamento MVP
 - [ ] Rodar `pnpm typecheck`
 - [ ] Rodar `pnpm lint`
 - [ ] Rodar `pnpm build`
@@ -622,7 +678,9 @@ chore: atualiza dependências
 - [ ] Testar usuário com board: login → `/board` → mês atual
 - [ ] Testar criar, editar e remover transação no mês selecionado
 - [ ] Testar edição rápida de descrição com confirmar/cancelar
+- [ ] Testar alteração de categoria em lote com seleção múltipla
 - [ ] Testar importar CSV Nubank com entradas e saídas
+- [ ] Testar geração de imagem de fechamento com ajustes temporários
 - [ ] Testar sugestões de categoria/descrição com histórico real
 - [ ] Testar navegação mês anterior/próximo sem misturar totais
 - [ ] Testar link público sem login e sem ações de mutação

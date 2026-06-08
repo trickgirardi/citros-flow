@@ -8,6 +8,7 @@ import {
   createTransactionsForCurrentUser,
   deleteTransactionForCurrentUser,
   type BulkCreateTransactionInput,
+  updateTransactionsCategoryForCurrentUser,
   updateTransactionDescriptionForCurrentUser,
   updateTransactionForCurrentUser,
 } from "@/lib/supabase/queries/transactions";
@@ -19,6 +20,10 @@ export type TransactionFormState = {
 
 export type DeleteTransactionState = TransactionFormState;
 export type UpdateTransactionDescriptionState = TransactionFormState;
+
+export type BulkUpdateTransactionCategoryState = TransactionFormState & {
+  updatedCount: number;
+};
 
 export type ImportNubankCsvState = TransactionFormState & {
   importedCount: number;
@@ -332,6 +337,62 @@ export async function updateTransactionDescription(
     error: null,
     success: true,
   };
+}
+
+export async function updateTransactionsCategory(
+  _: BulkUpdateTransactionCategoryState,
+  formData: FormData
+): Promise<BulkUpdateTransactionCategoryState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const category = parseRequiredText(formData.get("category"));
+  const transactionIds = Array.from(
+    new Set(
+      formData
+        .getAll("transactionIds")
+        .map((value) => value.toString().trim())
+        .filter((value) => value.length > 0)
+    )
+  );
+
+  if (!boardId || !category || category.length > 80 || transactionIds.length === 0) {
+    return {
+      error: "Selecione transacoes e uma categoria valida.",
+      success: false,
+      updatedCount: 0,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+      updatedCount: 0,
+    };
+  }
+
+  try {
+    const updatedTransactions = await updateTransactionsCategoryForCurrentUser({
+      boardId,
+      category,
+      transactionIds,
+    });
+
+    revalidatePath(`/board/${boardId}`);
+
+    return {
+      error: null,
+      success: true,
+      updatedCount: updatedTransactions.length,
+    };
+  } catch {
+    return {
+      error: "Nao foi possivel atualizar as categorias.",
+      success: false,
+      updatedCount: 0,
+    };
+  }
 }
 
 export async function deleteTransaction(

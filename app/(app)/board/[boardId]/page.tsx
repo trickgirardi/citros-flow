@@ -59,6 +59,8 @@ export default async function BoardDashboardPage({
   ]);
   const entradas = filterTransactionsByType(transactions, "entrada");
   const saidas = filterTransactionsByType(transactions, "saida");
+  const entradaGroups = groupTransactionsByCategory(entradas);
+  const saidaGroups = groupTransactionsByCategory(saidas);
   const entradasTotal = sumTransactions(entradas);
   const saidasTotal = sumTransactions(saidas);
   const previousBalance = sumTransactionBalance(previousTransactions);
@@ -70,7 +72,7 @@ export default async function BoardDashboardPage({
         canMutate={canMutate}
         categorySuggestions={suggestions.categories}
         descriptionSuggestions={suggestions.descriptions}
-        groups={groupTransactionsByCategory(entradas)}
+        groups={entradaGroups}
         total={entradasTotal}
       />
       <SaidasPanel
@@ -78,17 +80,27 @@ export default async function BoardDashboardPage({
         canMutate={canMutate}
         categorySuggestions={suggestions.categories}
         descriptionSuggestions={suggestions.descriptions}
-        groups={groupTransactionsByCategory(saidas)}
+        groups={saidaGroups}
         total={saidasTotal}
       />
       <FechamentoPanel
         balance={previousBalance + entradasTotal - saidasTotal}
+        boardName={board.name}
         boardId={board.id}
         canMutate={canMutate}
         categorySuggestions={suggestions.categories}
         descriptionSuggestions={suggestions.descriptions}
+        entradaCategories={entradaGroups.map((group) => ({
+          category: group.category,
+          total: group.total,
+        }))}
         entradasTotal={entradasTotal}
+        monthLabel={monthScope.label}
         previousBalance={previousBalance}
+        saidaCategories={saidaGroups.map((group) => ({
+          category: group.category,
+          total: group.total,
+        }))}
         saidasTotal={saidasTotal}
         transactionCount={transactions.length}
       />

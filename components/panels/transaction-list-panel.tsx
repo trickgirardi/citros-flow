@@ -1,3 +1,12 @@
+"use client";
+
+import { useActionState, useId, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import {
+  type BulkUpdateTransactionCategoryState,
+  updateTransactionsCategory,
+} from "@/app/(app)/board/[boardId]/actions";
 import {
   formatCurrency,
   formatTransactionDate,
@@ -5,7 +14,14 @@ import {
 } from "@/components/panels/dashboard-data";
 import { InlineDescriptionEditor } from "@/components/board/InlineDescriptionEditor";
 import { TransactionActions } from "@/components/board/TransactionActions";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+const INITIAL_BULK_CATEGORY_STATE: BulkUpdateTransactionCategoryState = {
+  error: null,
+  success: false,
+  updatedCount: 0,
+};
 
 type TransactionListPanelProps = {
   boardId: string;
@@ -30,10 +46,61 @@ export function TransactionListPanel({
   title,
   total,
 }: TransactionListPanelProps) {
+  const categoryListId = useId();
+  const router = useRouter();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [state, formAction, isPending] = useActionState(
+    async (currentState: BulkUpdateTransactionCategoryState, formData: FormData) => {
+      const nextState = await updateTransactionsCategory(currentState, formData);
+
+      if (nextState.success) {
+        setSelectedIds([]);
+        router.refresh();
+      }
+
+      return nextState;
+    },
+    INITIAL_BULK_CATEGORY_STATE
+  );
+  const transactionIds = useMemo(
+    () => groups.flatMap((group) => group.transactions.map((transaction) => transaction.id)),
+    [groups]
+  );
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const allVisibleSelected =
+    transactionIds.length > 0 && transactionIds.every((id) => selectedIdSet.has(id));
   const amountClassName =
     tone === "entrada"
       ? "text-emerald-700 dark:text-emerald-300"
       : "text-rose-700 dark:text-rose-300";
+
+  function toggleTransaction(transactionId: string) {
+    setSelectedIds((currentIds) =>
+      currentIds.includes(transactionId)
+        ? currentIds.filter((id) => id !== transactionId)
+        : [...currentIds, transactionId]
+    );
+  }
+
+  function toggleAllVisible() {
+    setSelectedIds((currentIds) => {
+      if (allVisibleSelected) {
+        return currentIds.filter((id) => !transactionIds.includes(id));
+      }
+
+      return Array.from(new Set([...currentIds, ...transactionIds]));
+    });
+  }
+
+  function shouldIgnoreCardSelection(target: EventTarget | null) {
+    return target instanceof HTMLElement
+      ? Boolean(
+          target.closest(
+            "a,button,input,label,select,textarea,form,[data-skip-card-selection]"
+          )
+        )
+      : true;
+  }
 
   return (
     <section className="flex min-h-0 flex-1 flex-col rounded-lg border bg-card md:flex-none">
@@ -42,7 +109,20 @@ export function TransactionListPanel({
           <h2 className="text-sm font-semibold">{title}</h2>
           <p className="text-xs text-muted-foreground">{formatCurrency(total)}</p>
         </div>
-        <span className={cn("text-xs font-medium", amountClassName)}>{groups.length}</span>
+        <div className="flex items-center gap-3">
+          {canMutate && transactionIds.length > 0 ? (
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                aria-label="Selecionar transacoes visiveis"
+                onChange={toggleAllVisible}
+              />
+              <span className="hidden sm:inline">Selecionar</span>
+            </label>
+          ) : null}
+          <span className={cn("text-xs font-medium", amountClassName)}>{groups.length}</span>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
@@ -51,9 +131,64 @@ export function TransactionListPanel({
             {emptyLabel}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
+            {canMutate && selectedIds.length > 0 ? (
+              <form
+                action={formAction}
+                className="sticky top-0 z-10 grid gap-2 rounded-md border bg-background p-2 shadow-sm"
+              >
+                <input type="hidden" name="boardId" value={boardId} />
+                {selectedIds.map((transactionId) => (
+                  <input
+                    key={transactionId}
+                    type="hidden"
+                    name="transactionIds"
+                    value={transactionId}
+                  />
+                ))}
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <label className="grid min-w-0 flex-1 gap-1 text-xs font-medium">
+                    {selectedIds.length} selecionada(s)
+                    <input
+                      name="category"
+                      type="text"
+                      list={categoryListId}
+                      required
+                      maxLength={80}
+                      className="h-8 rounded-md border bg-background px-2 text-sm"
+                      placeholder="Nova categoria"
+                    />
+                    <datalist id={categoryListId}>
+                      {categorySuggestions.map((category) => (
+                        <option key={category} value={category} />
+                      ))}
+                    </datalist>
+                  </label>
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? "Aplicando..." : "Aplicar"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isPending}
+                      onClick={() => setSelectedIds([])}
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+
+                {state.error ? (
+                  <p className="text-xs text-destructive">{state.error}</p>
+                ) : null}
+              </form>
+            ) : null}
+
             {groups.map((group) => (
-              <section key={group.category} className="space-y-2">
+              <section key={group.category} className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-3 border-b pb-1">
                   <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {group.category}
@@ -63,12 +198,32 @@ export function TransactionListPanel({
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="flex flex-col gap-1.5">
                   {group.transactions.map((transaction) => (
                     <article
                       key={transaction.id}
-                      className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-2 rounded-md border bg-background px-2 py-1.5"
+                      className={cn(
+                        "grid items-center gap-2 rounded-md border bg-background px-2 py-1.5",
+                        canMutate
+                          ? "cursor-pointer grid-cols-[auto_2.5rem_minmax(0,1fr)_auto]"
+                          : "grid-cols-[2.5rem_minmax(0,1fr)_auto]"
+                      )}
+                      onClick={(event) => {
+                        if (!canMutate || shouldIgnoreCardSelection(event.target)) {
+                          return;
+                        }
+
+                        toggleTransaction(transaction.id);
+                      }}
                     >
+                      {canMutate ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedIdSet.has(transaction.id)}
+                          aria-label={`Selecionar ${transaction.description}`}
+                          onChange={() => toggleTransaction(transaction.id)}
+                        />
+                      ) : null}
                       <span className="text-xs text-muted-foreground">
                         {formatTransactionDate(transaction.date)}
                       </span>
@@ -90,7 +245,7 @@ export function TransactionListPanel({
                         {formatCurrency(transaction.amount)}
                       </span>
                       {canMutate ? (
-                        <div className="col-span-3 flex justify-end">
+                        <div className="col-span-4 flex justify-end">
                           <TransactionActions
                             boardId={boardId}
                             categorySuggestions={categorySuggestions}

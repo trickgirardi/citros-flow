@@ -1,28 +1,40 @@
 import { formatCurrency } from "@/components/panels/dashboard-data";
 import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal";
+import {
+  type ClosingCategorySummary,
+  MonthlyClosingImageModal,
+} from "@/components/board/MonthlyClosingImageModal";
 import { TransactionModal } from "@/components/modals/TransactionModal";
 import { cn } from "@/lib/utils";
 
 type FechamentoPanelProps = {
   balance: number;
+  boardName: string;
   boardId: string;
   canMutate: boolean;
   categorySuggestions: string[];
   descriptionSuggestions: string[];
+  entradaCategories: ClosingCategorySummary[];
   entradasTotal: number;
+  monthLabel: string;
   previousBalance: number;
+  saidaCategories: ClosingCategorySummary[];
   saidasTotal: number;
   transactionCount: number;
 };
 
 export function FechamentoPanel({
   balance,
+  boardName,
   boardId,
   canMutate,
   categorySuggestions,
   descriptionSuggestions,
+  entradaCategories,
   entradasTotal,
+  monthLabel,
   previousBalance,
+  saidaCategories,
   saidasTotal,
   transactionCount,
 }: FechamentoPanelProps) {
@@ -55,16 +67,25 @@ export function FechamentoPanel({
         </div>
       </div>
 
-      {canMutate ? (
-        <div className="mt-auto grid gap-2 border-t p-3">
-          <TransactionModal
-            boardId={boardId}
-            categorySuggestions={categorySuggestions}
-            descriptionSuggestions={descriptionSuggestions}
-          />
-          <ImportNubankCsvModal boardId={boardId} />
-        </div>
-      ) : null}
+      <div className="mt-auto grid gap-2 border-t p-3">
+        <MonthlyClosingImageModal
+          boardName={boardName}
+          entradas={entradaCategories}
+          monthLabel={monthLabel}
+          previousBalance={previousBalance}
+          saidas={saidaCategories}
+        />
+        {canMutate ? (
+          <>
+            <TransactionModal
+              boardId={boardId}
+              categorySuggestions={categorySuggestions}
+              descriptionSuggestions={descriptionSuggestions}
+            />
+            <ImportNubankCsvModal boardId={boardId} />
+          </>
+        ) : null}
+      </div>
     </aside>
   );
 }
