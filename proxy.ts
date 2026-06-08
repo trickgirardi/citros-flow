@@ -3,12 +3,20 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 const PUBLIC_ROUTES = new Set(["/login"]);
+const PUBLIC_ROUTE_PREFIXES = ["/share/"];
+
+function isPublicRoute(pathname: string) {
+  return (
+    PUBLIC_ROUTES.has(pathname) ||
+    PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { user, response } = await updateSession(request);
 
-  if (!user && !PUBLIC_ROUTES.has(pathname)) {
+  if (!user && !isPublicRoute(pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", pathname);
