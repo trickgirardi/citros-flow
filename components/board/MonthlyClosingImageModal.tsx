@@ -378,7 +378,14 @@ function drawCategoryCard(
   }
 ) {
   const headerHeight = 132;
-  const totalY = y + height - 168;
+  const totalHeight = 78;
+  const totalY = y + height - totalHeight;
+  const listTop = y + 190;
+  const rowHeight = 48;
+  const listBottom = totalY - 28;
+  const maxVisibleRows = Math.max(0, Math.floor((listBottom - listTop) / rowHeight));
+  const visibleCategories = categories.slice(0, maxVisibleRows);
+  const hiddenCount = categories.length - visibleCategories.length;
   const total = sumCategories(categories);
 
   fillRoundRect(context, x, y, width, height, 28, "#ffffff");
@@ -395,8 +402,8 @@ function drawCategoryCard(
     drawText(context, "Sem lançamentos", x + 42, y + 205, "28px Arial", "#64748b");
   }
 
-  categories.slice(0, 8).forEach((category, index) => {
-    const rowY = y + 190 + index * 48;
+  visibleCategories.forEach((category, index) => {
+    const rowY = listTop + index * rowHeight;
 
     drawText(context, truncate(category.category, 24), x + 42, rowY, "28px Arial");
     drawText(
@@ -412,8 +419,19 @@ function drawCategoryCard(
     drawLine(context, x + 42, rowY + 20, x + width - 42, rowY + 20, "#e5e7eb");
   });
 
+  if (hiddenCount > 0) {
+    drawText(
+      context,
+      `+ ${hiddenCount} categoria(s)`,
+      x + 42,
+      totalY - 22,
+      "22px Arial",
+      "#64748b"
+    );
+  }
+
   context.fillStyle = `${accent}22`;
-  context.fillRect(x, totalY, width, 78);
+  context.fillRect(x, totalY, width, totalHeight);
   drawText(context, totalLabel, x + 42, totalY + 50, "bold 32px Arial", "#111827");
   drawText(
     context,

@@ -60,7 +60,7 @@ export function FechamentoPanel({
         />
         <SummaryRow label="Total saidas" value={formatCurrency(saidasTotal)} />
 
-        <div className="mt-1 flex flex-row items-center justify-between rounded-md border bg-background pr-2">
+        <div className="mt-1 flex flex-row items-center justify-between rounded-md border bg-background px-2">
           <p className="text-xs text-muted-foreground">Saldo final</p>
           <p
             className={cn(
