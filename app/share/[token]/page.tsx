@@ -11,9 +11,11 @@ import { SaidasPanel } from "@/components/panels/SaidasPanel"
 import {
   filterTransactionsByType,
   groupTransactionsByCategory,
+  sumFinancialReserves,
   sumTransactionBalance,
   sumTransactions,
 } from "@/components/panels/dashboard-data"
+import { listFinancialReservesByBoardWithServiceRole } from "@/lib/supabase/queries/financial-reserves"
 import { getBoardByShareToken } from "@/lib/supabase/queries/share-links"
 import {
   listTransactionsBeforeDateWithServiceRole,
@@ -42,7 +44,7 @@ export default async function ShareBoardPage({
   }
 
   const monthScope = getMonthScope(getSingleSearchParam(month))
-  const [transactions, previousTransactions] = await Promise.all([
+  const [transactions, previousTransactions, reserves] = await Promise.all([
     listTransactionsByBoardWithServiceRole({
       boardId: board.id,
       endDate: monthScope.endDate,
@@ -52,6 +54,7 @@ export default async function ShareBoardPage({
       beforeDate: monthScope.startDate,
       boardId: board.id,
     }),
+    listFinancialReservesByBoardWithServiceRole(board.id),
   ])
   const entradas = filterTransactionsByType(transactions, "entrada")
   const saidas = filterTransactionsByType(transactions, "saida")
@@ -60,6 +63,7 @@ export default async function ShareBoardPage({
   const entradasTotal = sumTransactions(entradas)
   const saidasTotal = sumTransactions(saidas)
   const previousBalance = sumTransactionBalance(previousTransactions)
+  const reservasTotal = sumFinancialReserves(reserves)
 
   return (
     <main className="flex h-svh flex-col overflow-hidden bg-muted/30">
@@ -110,6 +114,8 @@ export default async function ShareBoardPage({
           entradasTotal={entradasTotal}
           monthLabel={monthScope.label}
           previousBalance={previousBalance}
+          reserves={[]}
+          reservasTotal={reservasTotal}
           saidaCategories={saidaGroups.map((group) => ({
             category: group.category,
             total: group.total,

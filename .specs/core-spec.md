@@ -71,6 +71,7 @@ citros-flow/
 │   │   ├── MonthlyClosingImageModal.tsx
 │   │   ├── ImportNubankCsvModal.tsx
 │   │   ├── InlineDescriptionEditor.tsx
+│   │   ├── FinancialReservesModal.tsx
 │   │   ├── MonthNavigator.tsx
 │   │   ├── TransactionActions.tsx
 │   │   └── ShareBoardButton.tsx
@@ -87,6 +88,7 @@ citros-flow/
 │   │   └── queries/                # Todo acesso ao banco fica aqui
 │   │       ├── transactions.ts
 │   │       ├── boards.ts
+│   │       ├── financial-reserves.ts
 │   │       └── share-links.ts
 │   └── utils.ts                    # cn(), formatCurrency(), etc.
 ├── types/
@@ -186,7 +188,28 @@ type UserRole = {
 }
 ```
 
-### 4.6 BoardShareLink (Link Público View-Only)
+### 4.6 FinancialReserve (Reserva Financeira)
+Valor guardado pelo board (dinheiro, caixinha, investimento), fora do fluxo de caixa operacional.
+
+```typescript
+type FinancialReserve = {
+  id: string
+  board_id: string     // FK → boards
+  name: string          // "Caixinha", "Poupanca"
+  amount: number         // decimal(12,2)
+  created_by: string    // FK → auth.users
+  created_at: string
+}
+```
+
+Regras:
+- Reserva é um valor acumulado do board, sem filtro por mês/fechamento
+- `admin` e `tesoureiro` podem cadastrar, editar e remover reservas
+- `viewer` e link público apenas visualizam o total agregado
+- Total de reservas é somente informativo: não entra no cálculo do saldo final
+- Total aparece logo abaixo do saldo final no painel de Fechamento e na imagem de fechamento gerada
+
+### 4.7 BoardShareLink (Link Público View-Only)
 Permite visualizar um board sem login, apenas leitura.
 
 ```typescript
@@ -263,6 +286,16 @@ create table board_share_links (
   expires_at timestamptz
 );
 
+-- financial_reserves
+create table financial_reserves (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid references boards(id) on delete cascade not null,
+  name text not null,
+  amount numeric(12,2) not null check (amount > 0),
+  created_by uuid references auth.users(id) not null,
+  created_at timestamptz default now()
+);
+
 -- indices essenciais do MVP
 create index transactions_board_date_idx on transactions(board_id, date desc);
 create index transactions_board_category_idx on transactions(board_id, category);
@@ -270,6 +303,7 @@ create index transactions_board_description_idx on transactions(board_id, descri
 create index board_share_links_board_id_idx on board_share_links(board_id);
 create index board_share_links_active_idx on board_share_links(token_hash)
   where revoked_at is null;
+create index financial_reserves_board_id_idx on financial_reserves(board_id);
 ```
 
 ---
@@ -459,23 +493,30 @@ create policy "usuarios can insert transactions"
 - Geração acontece no browser; não cria registro no banco e não exige dependência nova
 - Botão fica no painel de Fechamento como ação operacional
 - Antes de gerar a imagem, abrir modal com campos temporários:
-  - aluguel
-  - conta de água
-  - conta de luz
   - entrada extra opcional: categoria + valor
   - saída extra opcional: categoria + valor
 - Valores temporários entram apenas no cálculo/arte do fechamento gerado
 - Valores temporários não são salvos no DB e não alteram o dashboard
-- Aluguel, água e luz entram junto das saídas por categoria
 - Entrada extra soma nas entradas; saída extra soma nas saídas
 - Imagem deve conter:
   - cabeçalho: `Fluxo de caixa`, nome do board, mês/ano
   - lado esquerdo: entradas por categoria
   - lado direito: saídas por categoria, incluindo ajustes temporários
-  - rodapé/resumo: saldo anterior, entradas, saídas, saldo final
+  - rodapé/resumo: saldo anterior, entradas, saídas, saldo final, total de reservas financeiras (informativo)
 - O saldo final da imagem usa: `saldo anterior + entradas ajustadas - saídas ajustadas`
+- Total de reservas financeiras aparece logo abaixo do saldo final e não entra na fórmula do saldo final
 - Categorias repetidas devem ser agregadas antes de desenhar a imagem
 - O arquivo gerado deve ser baixado com nome legível contendo board e mês
+
+### 7.11 Reservas Financeiras
+- Objetivo: registrar valores guardados pelo board (dinheiro, caixinha, investimentos) fora do fluxo de caixa operacional
+- Botão "Reservas financeiras" fica no painel de Fechamento, visível apenas para `admin` e `tesoureiro`
+- Modal permite cadastrar, editar e remover reservas (campos: nome + valor)
+- Remover reserva pede confirmação antes de excluir
+- Total agregado das reservas aparece logo abaixo do saldo final no painel de Fechamento, para todos os papéis (incluindo `viewer`) e no link público
+- Total de reservas é somente informativo: não entra no cálculo do saldo final do fechamento
+- Reserva é um valor acumulado do board, sem filtro por mês; o mesmo total aparece em qualquer mês selecionado
+- Total de reservas também aparece na imagem de fechamento mensal gerada
 
 ---
 
@@ -672,7 +713,18 @@ chore: atualiza dependências
 - [x] Retornar `notFound()` para token inválido, expirado ou revogado
 - [x] Garantir que token cru nunca é salvo no banco
 
-### Fase 13 — Validação de Lançamento MVP
+### Fase 13 — Reservas Financeiras
+- [x] Criar tabela `financial_reserves` com RLS (`admin`/`tesoureiro` mutam, `viewer` e público apenas leem o total)
+- [x] Criar query layer `financial-reserves.ts` (list/create/update/delete)
+- [x] Criar server actions de reserva (criar/editar/remover)
+- [x] Criar `FinancialReservesModal` com listagem, cadastro, edição e remoção (com confirmação)
+- [x] Exibir botão "Reservas financeiras" no painel de Fechamento (apenas `admin`/`tesoureiro`)
+- [x] Exibir total de reservas logo abaixo do saldo final no painel de Fechamento
+- [x] Garantir que o total de reservas é apenas informativo e não altera o saldo final
+- [x] Exibir total de reservas na imagem de fechamento mensal gerada
+- [x] Exibir total de reservas também no link público view-only
+
+### Fase 14 — Validação de Lançamento MVP
 - [ ] Rodar `pnpm typecheck`
 - [ ] Rodar `pnpm lint`
 - [ ] Rodar `pnpm build`
@@ -688,6 +740,9 @@ chore: atualiza dependências
 - [ ] Testar link público sem login e sem ações de mutação
 - [ ] Testar token público revogado/inválido
 - [ ] Testar mobile sem scroll global
+- [ ] Testar cadastrar, editar e remover reservas financeiras (`admin`/`tesoureiro`)
+- [ ] Testar que `viewer` e link público veem o total de reservas mas não o botão de gestão
+- [ ] Testar que o total de reservas não altera o saldo final em nenhum cenário
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo
@@ -711,6 +766,8 @@ chore: atualiza dependências
 - Link público usa token opaco forte; banco salva apenas hash do token
 - Fechamento mensal usa timezone operacional `America/Sao_Paulo`
 - Editar categoria/descrição altera apenas a transação editada
+- Reservas financeiras não têm filtro por mês; representam um valor acumulado do board
+- Total de reservas financeiras é somente informativo e nunca entra no cálculo do saldo final
 
 ### Perguntas Abertas
 - Nenhuma no momento.

@@ -10,6 +10,7 @@ import { SaidasPanel } from "@/components/panels/SaidasPanel";
 import {
   filterTransactionsByType,
   groupTransactionsByCategory,
+  sumFinancialReserves,
   sumTransactionBalance,
   sumTransactions,
 } from "@/components/panels/dashboard-data";
@@ -17,6 +18,7 @@ import {
   canMutateBoardForCurrentUser,
   getBoardForCurrentUser,
 } from "@/lib/supabase/queries/boards";
+import { listFinancialReservesByBoard } from "@/lib/supabase/queries/financial-reserves";
 import {
   listTransactionsBeforeDate,
   listTransactionsByBoard,
@@ -44,19 +46,21 @@ export default async function BoardDashboardPage({
     notFound();
   }
 
-  const [transactions, previousTransactions, canMutate, suggestions] = await Promise.all([
-    listTransactionsByBoard({
-      boardId: board.id,
-      endDate: monthScope.endDate,
-      startDate: monthScope.startDate,
-    }),
-    listTransactionsBeforeDate({
-      beforeDate: monthScope.startDate,
-      boardId: board.id,
-    }),
-    canMutateBoardForCurrentUser(board.id),
-    listTransactionSuggestionsByBoard(board.id),
-  ]);
+  const [transactions, previousTransactions, canMutate, suggestions, reserves] =
+    await Promise.all([
+      listTransactionsByBoard({
+        boardId: board.id,
+        endDate: monthScope.endDate,
+        startDate: monthScope.startDate,
+      }),
+      listTransactionsBeforeDate({
+        beforeDate: monthScope.startDate,
+        boardId: board.id,
+      }),
+      canMutateBoardForCurrentUser(board.id),
+      listTransactionSuggestionsByBoard(board.id),
+      listFinancialReservesByBoard(board.id),
+    ]);
   const entradas = filterTransactionsByType(transactions, "entrada");
   const saidas = filterTransactionsByType(transactions, "saida");
   const entradaGroups = groupTransactionsByCategory(entradas);
@@ -64,6 +68,7 @@ export default async function BoardDashboardPage({
   const entradasTotal = sumTransactions(entradas);
   const saidasTotal = sumTransactions(saidas);
   const previousBalance = sumTransactionBalance(previousTransactions);
+  const reservasTotal = sumFinancialReserves(reserves);
 
   return (
     <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_20rem] md:grid-rows-1">
@@ -97,6 +102,8 @@ export default async function BoardDashboardPage({
         entradasTotal={entradasTotal}
         monthLabel={monthScope.label}
         previousBalance={previousBalance}
+        reserves={reserves}
+        reservasTotal={reservasTotal}
         saidaCategories={saidaGroups.map((group) => ({
           category: group.category,
           total: group.total,

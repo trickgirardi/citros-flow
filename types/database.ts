@@ -94,6 +94,41 @@ export type Database = {
           },
         ];
       };
+      financial_reserves: {
+        Row: {
+          amount: number;
+          board_id: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          amount: number;
+          board_id: string;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          amount?: number;
+          board_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "financial_reserves_board_id_fkey";
+            columns: ["board_id"];
+            isOneToOne: false;
+            referencedRelation: "boards";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       transactions: {
         Row: {
           amount: number;

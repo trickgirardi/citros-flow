@@ -1,4 +1,5 @@
-import { formatCurrency } from "@/components/panels/dashboard-data"
+import { formatCurrency, type FinancialReserve } from "@/components/panels/dashboard-data"
+import { FinancialReservesModal } from "@/components/board/FinancialReservesModal"
 import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal"
 import {
   type ClosingCategorySummary,
@@ -18,6 +19,8 @@ type FechamentoPanelProps = {
   entradasTotal: number
   monthLabel: string
   previousBalance: number
+  reserves: FinancialReserve[]
+  reservasTotal: number
   saidaCategories: ClosingCategorySummary[]
   saidasTotal: number
   transactionCount: number
@@ -34,6 +37,8 @@ export function FechamentoPanel({
   entradasTotal,
   monthLabel,
   previousBalance,
+  reserves,
+  reservasTotal,
   saidaCategories,
   saidasTotal,
   transactionCount,
@@ -73,6 +78,15 @@ export function FechamentoPanel({
             {formatCurrency(balance)}
           </p>
         </div>
+
+        <div className="flex flex-row items-center justify-between rounded-md bg-muted px-3 py-2">
+          <span className="text-xs text-muted-foreground">
+            Total de reservas
+          </span>
+          <span className="text-sm font-semibold tabular-nums">
+            {formatCurrency(reservasTotal)}
+          </span>
+        </div>
       </div>
 
       {canMutate ? (
@@ -82,6 +96,7 @@ export function FechamentoPanel({
             entradas={entradaCategories}
             monthLabel={monthLabel}
             previousBalance={previousBalance}
+            reservasTotal={reservasTotal}
             saidas={saidaCategories}
           />
           <>
@@ -91,6 +106,7 @@ export function FechamentoPanel({
               descriptionSuggestions={descriptionSuggestions}
             />
             <ImportNubankCsvModal boardId={boardId} />
+            <FinancialReservesModal boardId={boardId} reserves={reserves} />
           </>
         </div>
       ) : null}

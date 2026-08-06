@@ -2,6 +2,7 @@ import type { Database } from "@/types/database";
 
 export type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 export type TransactionType = Transaction["type"];
+export type FinancialReserve = Database["public"]["Tables"]["financial_reserves"]["Row"];
 
 export type TransactionGroup = {
   category: string;
@@ -68,4 +69,10 @@ export function sumTransactionBalance(
 
     return total - transaction.amount;
   }, 0);
+}
+
+export function sumFinancialReserves(
+  reserves: Pick<FinancialReserve, "amount">[]
+) {
+  return reserves.reduce((total, reserve) => total + reserve.amount, 0);
 }

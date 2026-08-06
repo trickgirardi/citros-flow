@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { createShareToken } from "@/lib/share-token";
 import { getBoardForCurrentUser } from "@/lib/supabase/queries/boards";
+import {
+  createFinancialReserveForCurrentUser,
+  deleteFinancialReserveForCurrentUser,
+  updateFinancialReserveForCurrentUser,
+} from "@/lib/supabase/queries/financial-reserves";
 import { createBoardShareLinkForCurrentUser } from "@/lib/supabase/queries/share-links";
 import {
   createTransactionForCurrentUser,
@@ -34,6 +39,9 @@ export type CreateShareLinkState = TransactionFormState & {
 export type ImportNubankCsvState = TransactionFormState & {
   importedCount: number;
 };
+
+export type FinancialReserveFormState = TransactionFormState;
+export type DeleteFinancialReserveState = TransactionFormState;
 
 const VALID_TRANSACTION_TYPES = new Set(["entrada", "saida"]);
 const IMPORTED_CATEGORY = "Dados importados";
@@ -553,6 +561,134 @@ export async function importNubankCsv(
   return {
     error: null,
     importedCount: transactions.length,
+    success: true,
+  };
+}
+
+export async function createFinancialReserve(
+  _: FinancialReserveFormState,
+  formData: FormData
+): Promise<FinancialReserveFormState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const name = parseRequiredText(formData.get("name"));
+  const amount = parseAmount(formData.get("amount"));
+
+  if (!boardId || !name || !amount) {
+    return {
+      error: "Preencha nome e valor com dados validos.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await createFinancialReserveForCurrentUser({ amount, boardId, name });
+  } catch {
+    return {
+      error: "Nao foi possivel salvar a reserva.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    success: true,
+  };
+}
+
+export async function updateFinancialReserve(
+  _: FinancialReserveFormState,
+  formData: FormData
+): Promise<FinancialReserveFormState> {
+  const reserveId = parseRequiredText(formData.get("reserveId"));
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const name = parseRequiredText(formData.get("name"));
+  const amount = parseAmount(formData.get("amount"));
+
+  if (!reserveId || !boardId || !name || !amount) {
+    return {
+      error: "Preencha nome e valor com dados validos.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await updateFinancialReserveForCurrentUser({
+      amount,
+      boardId,
+      name,
+      reserveId,
+    });
+  } catch {
+    return {
+      error: "Nao foi possivel atualizar a reserva.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
+    success: true,
+  };
+}
+
+export async function deleteFinancialReserve(
+  _: DeleteFinancialReserveState,
+  formData: FormData
+): Promise<DeleteFinancialReserveState> {
+  const boardId = parseRequiredText(formData.get("boardId"));
+  const reserveId = parseRequiredText(formData.get("reserveId"));
+
+  if (!boardId || !reserveId) {
+    return {
+      error: "Reserva invalida.",
+      success: false,
+    };
+  }
+
+  const board = await getBoardForCurrentUser(boardId);
+
+  if (!board) {
+    return {
+      error: "Board inacessivel.",
+      success: false,
+    };
+  }
+
+  try {
+    await deleteFinancialReserveForCurrentUser({ boardId, reserveId });
+  } catch {
+    return {
+      error: "Nao foi possivel remover a reserva.",
+      success: false,
+    };
+  }
+
+  revalidatePath(`/board/${boardId}`);
+
+  return {
+    error: null,
     success: true,
   };
 }
