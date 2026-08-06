@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/proxy";
 
-const PUBLIC_ROUTES = new Set(["/login"]);
-const PUBLIC_ROUTE_PREFIXES = ["/share/"];
+const PUBLIC_ROUTES = new Set(["/login", "/forgot-password", "/reset-password"]);
+const PUBLIC_ROUTE_PREFIXES = ["/share/", "/auth/confirm"];
 
 function isPublicRoute(pathname: string) {
   return (

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/supabase/queries/auth"
 type LoginPageProps = {
   searchParams: Promise<{
     next?: string | string[]
+    reset?: string | string[]
   }>
 }
 
@@ -20,9 +21,10 @@ function getNextPath(next: string | string[] | undefined) {
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { next } = await searchParams
+  const { next, reset } = await searchParams
   const nextPath = getNextPath(next)
   const user = await getCurrentUser()
+  const resetSucceeded = (Array.isArray(reset) ? reset[0] : reset) === "success"
 
   if (user) {
     redirect(nextPath)
@@ -37,6 +39,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Acesse com seu e-mail e senha.
           </p>
         </div>
+
+        {resetSucceeded ? (
+          <p className="mb-4 text-sm text-emerald-600 dark:text-emerald-400">
+            Senha atualizada. Faca login com sua nova senha.
+          </p>
+        ) : null}
 
         <LoginForm nextPath={nextPath} />
       </section>

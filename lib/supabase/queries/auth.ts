@@ -30,3 +30,21 @@ export async function signOutCurrentSession() {
 
   return supabase.auth.signOut();
 }
+
+export async function requestPasswordReset(email: string, redirectTo: string) {
+  const supabase = await createSupabaseServerClient();
+
+  return supabase.auth.resetPasswordForEmail(email, { redirectTo });
+}
+
+export async function exchangeAuthCodeForSession(code: string) {
+  const supabase = await createSupabaseServerClient();
+
+  return supabase.auth.exchangeCodeForSession(code);
+}
+
+export async function updateCurrentUserPassword(password: string) {
+  const supabase = await createSupabaseServerClient();
+
+  return supabase.auth.updateUser({ password });
+}
