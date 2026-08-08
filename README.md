@@ -1,17 +1,13 @@
 # Citros Flow
 
-Base do projeto em Next.js 16 + Supabase.
+**Citros** é um sistema financeiro minimalista para fechamentos de caixa de instituições sem fins lucrativos. Prioriza visualização rápida e entrada ágil de dados via dashboard de tela única (single-screen no desktop, sem scroll global).
 
-## Fase 1 - Fundacao
-
-Implementado neste repositório:
-
-- Configuracao Supabase SSR (`lib/supabase/*`)
-- Login/logout com Supabase Auth (`/login` + server actions)
-- Protecao de rotas com `proxy.ts` (Next.js 16)
-- Tipos TypeScript iniciais do banco (`types/database.ts`)
-- SQL de schema + RLS (`supabase/schema.sql`)
-- Variaveis de ambiente em `.env.example`
+## Princípios Fundamentais
+- **Clareza acima de tudo** — o usuário deve saber o saldo em menos de 2 segundos ao abrir o sistema
+- **Zero fricção na entrada** — inserir uma transação deve exigir o mínimo de cliques possível
+- **Fechamento mensal** — toda leitura financeira operacional acontece dentro de um mês/ano selecionado
+- **Dados confiáveis** — RLS no banco garante que cada usuário vê apenas o que deve ver
+- **IA-first, review-based** — código gerado por IA, revisado e aprovado por humano antes de merge
 
 ## Setup
 
