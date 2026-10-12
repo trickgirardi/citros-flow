@@ -259,6 +259,8 @@ type User = {
 - Totais, saldos e grupos por categoria são calculados na API. O front só formata (BRL) e, quando precisa somar (ajustes temporários da imagem de fechamento), usa **centavos inteiros**.
 - Entrada de formulário aceita vírgula (`"1.234,56"`); o front normaliza antes de enviar. A API exige valor maior que 0 e arredonda para 2 casas (`AwayFromZero`).
 - O saldo anterior é um `SUM` com sinal feito no banco, sem limite de linhas.
+- Escritas: o valor é arredondado para centavos (metade para longe do zero) e precisa ficar entre 0,01 e 9.999.999.999,99. Valor que arredonda para 0,00 é inválido. A API aceita string decimal com ponto (e número JSON); a vírgula do pt-BR é normalizada pelo front.
+- Limites de texto: categoria até 80 caracteres; nome de reserva até 80; descrição até 120 na edição inline e até 500 (teto de segurança) ao criar, editar e importar, porque descrições importadas do Nubank passam de 120.
 
 ---
 
@@ -520,7 +522,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Importação é autorizada pela API e só aparece para roles com permissão de mutação (`admin` e `tesoureiro`)
 - Após importação, dashboard revalida; transações aparecem nos meses correspondentes às datas do CSV
 - Erros de formato devem retornar feedback claro sem quebrar o dashboard
-- A importação é tudo ou nada: uma linha inválida rejeita o arquivo inteiro, e as inserções acontecem em uma única transação de banco
+- A importação é tudo ou nada: uma linha inválida rejeita o arquivo inteiro, e as inserções acontecem em uma única transação de banco. Datas inexistentes (31/02) invalidam a linha; arquivos acima de 5 MB são recusados
 - O parser roda na API (`POST /api/boards/{boardId}/transactions/import/nubank`, multipart)
 
 ### 7.10 Imagem de Fechamento Mensal
@@ -811,7 +813,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
 - [x] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
 - [x] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
-- [ ] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
+- [x] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
 - [ ] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
 - [ ] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
 - [ ] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito

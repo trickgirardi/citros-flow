@@ -35,3 +35,79 @@ Cookie: citros_session={{session}}
 ### Reservas financeiras (só admin/tesoureiro; viewer recebe 403)
 GET {{host}}/api/boards/{{boardId}}/reserves
 Cookie: citros_session={{session}}
+
+### ---------------------------------------------------------------------------------------------
+### Escrita (exige admin/tesoureiro no board, ou papel global). O dinheiro é sempre string decimal.
+### Navegador/Next: POST/PUT/PATCH/DELETE com header Origin precisam do origin público; aqui não há Origin.
+@transactionId = COLE_UM_ID_DE_TRANSACAO
+@reserveId = COLE_UM_ID_DE_RESERVA
+
+### Criar transação
+POST {{host}}/api/boards/{{boardId}}/transactions
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "type": "entrada", "amount": "150.50", "description": "Mensalidade", "category": "Doações", "date": "2026-05-10" }
+
+### Editar transação (todos os campos)
+PUT {{host}}/api/boards/{{boardId}}/transactions/{{transactionId}}
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "type": "saida", "amount": "20.00", "description": "Conta de luz", "category": "Luz", "date": "2026-05-12" }
+
+### Editar só a descrição (até 120 caracteres)
+PATCH {{host}}/api/boards/{{boardId}}/transactions/{{transactionId}}/description
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "description": "Nova descrição" }
+
+### Trocar a categoria de várias transações
+PATCH {{host}}/api/boards/{{boardId}}/transactions/category
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "ids": ["{{transactionId}}"], "category": "Nova categoria" }
+
+### Remover transação
+DELETE {{host}}/api/boards/{{boardId}}/transactions/{{transactionId}}
+Cookie: citros_session={{session}}
+
+### Importar extrato CSV do Nubank (multipart, campo "file")
+POST {{host}}/api/boards/{{boardId}}/transactions/import/nubank
+Cookie: citros_session={{session}}
+Content-Type: multipart/form-data; boundary=fronteira
+
+--fronteira
+Content-Disposition: form-data; name="file"; filename="extrato.csv"
+Content-Type: text/csv
+
+< ./extrato.csv
+--fronteira--
+
+### Reservas: criar, editar, remover
+POST {{host}}/api/boards/{{boardId}}/reserves
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "name": "Caixinha", "amount": "100.00" }
+
+###
+PUT {{host}}/api/boards/{{boardId}}/reserves/{{reserveId}}
+Cookie: citros_session={{session}}
+Content-Type: application/json
+
+{ "name": "Poupança", "amount": "250.00" }
+
+###
+DELETE {{host}}/api/boards/{{boardId}}/reserves/{{reserveId}}
+Cookie: citros_session={{session}}
+
+### Gerar link público (devolve o token; a URL é /share/<token>)
+POST {{host}}/api/boards/{{boardId}}/share-links
+Cookie: citros_session={{session}}
+
+### Leitura pública, sem login
+@shareToken = COLE_O_TOKEN
+GET {{host}}/api/share/{{shareToken}}/months/{{month}}

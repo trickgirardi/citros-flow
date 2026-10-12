@@ -41,4 +41,38 @@ public class OpenApiContractTests(PostgresFixture postgres)
         var months = paths.GetProperty("/api/boards/{boardId}/months/{month}").GetProperty("get").GetProperty("responses");
         Assert.True(months.TryGetProperty("400", out _) && months.TryGetProperty("404", out _));
     }
+
+    [Fact]
+    public async Task Rotas_de_escrita_import_e_compartilhamento_estao_no_contrato()
+    {
+        var doc = await Doc();
+        var paths = doc.GetProperty("paths");
+        var board = "/api/boards/{boardId}";
+
+        foreach (var (path, method) in new[]
+                 { ($"{board}/transactions", "post"), ($"{board}/transactions/{{id}}", "put"),
+                   ($"{board}/transactions/{{id}}", "delete"), ($"{board}/transactions/{{id}}/description", "patch"),
+                   ($"{board}/transactions/category", "patch"), ($"{board}/transactions/import/nubank", "post"),
+                   ($"{board}/reserves", "post"), ($"{board}/reserves/{{id}}", "put"), ($"{board}/reserves/{{id}}", "delete"),
+                   ($"{board}/share-links", "post"), ("/api/share/{token}/months/{month}", "get") })
+            Assert.True(paths.GetProperty(path).TryGetProperty(method, out _), $"{method} {path}");
+
+        // erros documentados: o cliente TS gerado tipa 400 e 403
+        var create = paths.GetProperty($"{board}/transactions").GetProperty("post").GetProperty("responses");
+        foreach (var status in new[] { "200", "400", "403", "404" })
+            Assert.True(create.TryGetProperty(status, out _), $"POST transactions {status}");
+
+        // dinheiro de entrada também é string decimal
+        var schemas = doc.GetProperty("components").GetProperty("schemas");
+        foreach (var (schema, property) in new[] { ("TransactionRequest", "amount"), ("ReserveRequest", "amount") })
+        {
+            var money = schemas.GetProperty(schema).GetProperty("properties").GetProperty(property);
+            Assert.Equal("string", money.GetProperty("type").GetString());
+            Assert.Equal("decimal", money.GetProperty("format").GetString());
+        }
+
+        // import é multipart; a leitura pública não exige autenticação
+        var import = paths.GetProperty($"{board}/transactions/import/nubank").GetProperty("post");
+        Assert.True(import.GetProperty("requestBody").GetProperty("content").TryGetProperty("multipart/form-data", out _));
+    }
 }

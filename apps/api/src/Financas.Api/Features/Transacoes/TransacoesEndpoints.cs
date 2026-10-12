@@ -13,6 +13,8 @@ public static class TransacoesEndpoints
     public static void MapTransacoes(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/boards/{boardId:guid}").WithTags("Transacoes").RequireAuthorization();
+        group.MapWrites();
+        group.MapNubankImport();
 
         group.MapGet("/months/{month}",
                 async Task<Results<Ok<MonthSummaryResponse>, NotFound, ProblemHttpResult>> (

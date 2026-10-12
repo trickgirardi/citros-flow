@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0 a 5 concluídas (login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 a 6 concluídas (a API está completa; login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
 
 ## 0. Contexto
 
@@ -393,6 +393,30 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
 - **Arquivos:** `Features/Transacoes/*`, `Features/Reservas/*`, `Features/Compartilhamento/*`, testes.
 - **Concluído quando:** todas as funcionalidades da seção 5 existem na API, viewer recebe 403 e o import rejeita o arquivo inteiro se uma linha for inválida.
 - **Verificação:** testes de integração (permissões, parser CSV, link revogado ou expirado responde 404, `updated_*` preenchidos) e o `.http`.
+- **Executada.** 200 testes passam. O `.http` ganhou exemplos de todas as escritas.
+  - **Respostas:** criar e editar devolvem 200 com o DTO (`TransactionDto` ou `ReserveDto`). Remover devolve 204. Categoria em lote devolve `{updatedCount}` e o import devolve `{importedCount}`.
+  - **Erros:** `ProblemDetails`, com a mensagem para o usuário em `title`, em pt-BR com acento (o front antigo escrevia sem acento). 404 para board invisível ou item de outro board, 403 para quem só vê, 400 para dado inválido.
+  - **Acesso cruzado:** toda escrita filtra por id **e** board da URL. Transação ou reserva de outro board dá 404 e não é tocada (há teste para cada uma). Na categoria em lote, ids de outro board são ignorados e não entram no `updatedCount`.
+  - **Validações (desvios conscientes):**
+    - Valor: arredonda para centavos (metade para longe do zero), aceita de 0,01 a 9.999.999.999,99 (antes, o valor fora do `numeric(12,2)` só falhava no banco). Aceita string decimal com ponto e número JSON; a vírgula **não** é aceita (o front normaliza, seção 3.4).
+    - Descrição: **120 só na edição inline** (como antes) e **teto de 500** ao criar, editar e importar. O front antigo só limitava a 120 no `maxLength` do formulário, e descrições importadas do Nubank passam de 120; impor 120 quebraria a edição de transações importadas.
+    - Categoria: até 80, também ao criar e editar (antes só no lote). Nome de reserva: até 80.
+    - O enum `type` não aceita número (`1`), só `"entrada"`/`"saida"`.
+  - **Import Nubank:**
+    - `POST .../transactions/import/nubank`, multipart, **campo `file`** (o front antigo usava `csvFile`). Limite de 5 MB.
+    - Antiforgery do form desligado nesse endpoint; a proteção é `SameSite=Lax` mais a checagem de `Origin`.
+    - O parser é uma portagem fiel. Diferenças: data inexistente (31/02) agora invalida a linha, e as mensagens ganharam acento. O espaço depois de vírgula numa descrição sem aspas continua se perdendo, como antes.
+  - **Compartilhamento:**
+    - O token tem 32 bytes em base64url (43 caracteres) e só o SHA-256 em hex minúsculo vai para o banco. Criar o link exige `CanMutate`.
+    - A leitura pública devolve **`{boardName, summary}`** aninhado, em vez do plano `{boardName, ...resumo}` achatado, para reaproveitar o mesmo `MonthSummaryResponse`.
+    - A resposta pública não traz id do board, ids de usuário, sugestões nem a lista de reservas, e vai com `Cache-Control: no-store`.
+    - Revogar e listar links continuam fora do escopo (backlog).
+  - **Para a Etapa 8:**
+    - Normalizar o valor para `"1234.56"`.
+    - Mostrar o `title` do ProblemDetails como erro.
+    - Enviar o CSV no campo `file`.
+    - No `PUT`, mandar todos os campos.
+    - Esconder o botão de compartilhar sem `canMutate`.
 
 ### Etapa 7: Cliente TypeScript gerado (ainda sem uso)
 - **Escopo:**

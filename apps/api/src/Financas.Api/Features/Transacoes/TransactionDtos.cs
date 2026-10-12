@@ -11,6 +11,9 @@ public static class TransactionTypeMap
     /// <summary>O banco guarda "entrada"/"saida" (com check constraint).</summary>
     public static TransactionType From(string dbValue) =>
         dbValue == "entrada" ? TransactionType.Entrada : TransactionType.Saida;
+
+    public static string ToDb(TransactionType type) =>
+        type == TransactionType.Entrada ? "entrada" : "saida";
 }
 
 /// <param name="Date">Dia da transação, sem hora (yyyy-MM-dd).</param>
@@ -35,3 +38,9 @@ public record MonthSummaryResponse(
     List<CategoryGroupDto> Saidas);
 
 public record SuggestionsResponse(List<string> Categories, List<string> Descriptions);
+
+public static class TransactionMapping
+{
+    public static TransactionDto ToDto(this Data.Entities.Transaction t) =>
+        new(t.Id, TransactionTypeMap.From(t.Type), t.Amount, t.Description, t.Category, t.Date);
+}

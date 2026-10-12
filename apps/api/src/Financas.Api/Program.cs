@@ -2,6 +2,7 @@ using Financas.Api.Common;
 using Financas.Api.Data;
 using Financas.Api.Features.Auth;
 using Financas.Api.Features.Boards;
+using Financas.Api.Features.Compartilhamento;
 using Financas.Api.Features.Health;
 using Financas.Api.Features.Reservas;
 using Financas.Api.Features.Transacoes;
@@ -26,7 +27,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.Converters.Add(new DecimalStringConverter());
     // enums como texto camelCase: TransactionType.Entrada vira "entrada"
-    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
 });
 builder.Services.AddScoped<BoardAccess>();
 builder.Services.AddCitrosOpenApi();
@@ -62,6 +63,7 @@ app.MapAuth();
 app.MapBoards();
 app.MapTransacoes();
 app.MapReservas();
+app.MapCompartilhamento();
 
 app.Run();
 
