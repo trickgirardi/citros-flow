@@ -1,5 +1,7 @@
 # 🍋 SPEC — Citros Flow
 
+> **Estado do documento:** este spec descreve a arquitetura **alvo**: Next.js + API ASP.NET Core + PostgreSQL, com login Google. A migração a partir do Supabase está em andamento, em etapas, conforme [docs/refactor-plan.md](../docs/refactor-plan.md). Até a Etapa 9 do plano, o código ainda usa o Supabase. As funcionalidades das Fases 1–13 do roadmap continuam valendo.
+
 ---
 
 ## 1. Visão Geral
@@ -10,7 +12,7 @@
 - **Clareza acima de tudo** — o usuário deve saber o saldo em menos de 2 segundos ao abrir o sistema
 - **Zero fricção na entrada** — inserir uma transação deve exigir o mínimo de cliques possível
 - **Fechamento mensal** — toda leitura financeira operacional acontece dentro de um mês/ano selecionado
-- **Dados confiáveis** — RLS no banco garante que cada usuário vê apenas o que deve ver
+- **Dados confiáveis** — a API é a única porta de acesso ao banco e aplica a autorização por papel em todo endpoint, de modo que cada usuário vê e altera apenas o que deve
 - **IA-first, review-based** — código gerado por IA, revisado e aprovado por humano antes de merge
 
 ---
@@ -19,17 +21,22 @@
 
 | Camada | Tecnologia | Versão |
 |---|---|---|
-| Framework | Next.js (App Router) | 16.x |
-| Linguagem | TypeScript | 5.x |
-| Runtime | Node.js | 24 LTS |
+| Front | Next.js (App Router) | 16.x |
+| Linguagem (front) | TypeScript | 5.x |
+| Runtime (front) | Node.js | 24 LTS |
 | Package Manager | pnpm | 11.x |
-| Banco de Dados | Supabase (PostgreSQL) | — |
-| Autenticação | Supabase Auth | — |
-| UI Components | shadcn/ui + Radix UI | latest | 
+| Backend | ASP.NET Core Web API (Minimal APIs por feature) | .NET 10 LTS |
+| ORM e migrations | EF Core + Npgsql (`EFCore.NamingConventions`, snake_case) | 10.x |
+| Banco de Dados | PostgreSQL (Docker Compose) | 18 |
+| Autenticação | Login Google (OAuth) no backend, com cookie de sessão | — |
+| Contrato da API | OpenAPI (`Microsoft.AspNetCore.OpenApi`) + `openapi-typescript` / `openapi-fetch` | — |
+| Docs da API (dev) | Scalar (`Scalar.AspNetCore`), só em Development | 2.x |
+| Testes (backend) | xUnit + Testcontainers (PostgreSQL) | — |
+| UI Components | shadcn/ui + Radix UI | latest |
 | Estilização | Tailwind CSS | 4.x |
-| Temas | next-themes | 0.4.x |
+| Temas | Provider próprio (`components/theme-provider.tsx`); `next-themes` removido | — |
 | Linting/Format | Prettier + ESLint | — |
-| Deploy | Vercel | — |
+| Deploy | Fora do escopo atual (backlog: VPS com Docker Compose e Caddy) | — |
 
 ---
 
@@ -37,78 +44,77 @@
 
 ### 3.1 Estrutura de Pastas
 
+Monorepo. O front fica em `apps/web`, a API em `apps/api`.
+
 ```
 citros-flow/
-├── app/
-│   ├── (auth)/
-│   │   └── login/
-│   │       └── page.tsx
-│   ├── (app)/
-│   │   ├── layout.tsx              # Layout protegido (requer auth)
-│   │   └── board/
-│   │       ├── page.tsx            # Redirect para primeiro board ou empty state
-│   │       └── [boardId]/
-│   │           ├── actions.ts      # Server Actions do dashboard
-│   │           └── page.tsx        # Dashboard principal (single-screen)
-│   ├── share/
-│   │   └── [token]/
-│   │       └── page.tsx            # Visualização pública view-only
-│   ├── api/
-│   │   └── [...]/                  # Route handlers (se necessário)
-│   ├── layout.tsx                  # Root layout
-│   └── page.tsx                    # Redirect → login ou board
-├── components/
-│   ├── ui/                         # shadcn/ui (gerado automaticamente)
-│   ├── panels/
-│   │   ├── EntradasPanel.tsx
-│   │   ├── SaidasPanel.tsx
-│   │   └── FechamentoPanel.tsx
-│   ├── modals/
-│   │   └── TransactionModal.tsx
-│   ├── board/
-│   │   ├── BoardCalendarControls.tsx
-│   │   ├── BoardHeader.tsx
-│   │   ├── MonthlyClosingImageModal.tsx
-│   │   ├── ImportNubankCsvModal.tsx
-│   │   ├── InlineDescriptionEditor.tsx
-│   │   ├── FinancialReservesModal.tsx
-│   │   ├── MonthNavigator.tsx
-│   │   ├── TransactionActions.tsx
-│   │   └── ShareBoardButton.tsx
-│   └── layout/
-│       └── BoardSelector.tsx
-├── hooks/
-│   ├── useTransactions.ts
-│   ├── useBoard.ts
-│   └── useAuth.ts
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts               # Cliente browser
-│   │   ├── server.ts               # Cliente server (SSR/RSC)
-│   │   └── queries/                # Todo acesso ao banco fica aqui
-│   │       ├── transactions.ts
-│   │       ├── boards.ts
-│   │       ├── financial-reserves.ts
-│   │       └── share-links.ts
-│   └── utils.ts                    # cn(), formatCurrency(), etc.
-├── types/
-│   └── database.ts                 # Tipos gerados pelo Supabase CLI
-└── proxy.ts                        # Proteção de rotas via Supabase Auth (Next.js 16)
+├── apps/
+│   ├── web/                              # Next.js
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── (auth)/login/page.tsx # Botão "Entrar com Google" + mensagens de erro
+│   │   │   │   ├── (app)/
+│   │   │   │   │   ├── layout.tsx        # Layout protegido (valida sessão via GET /api/me)
+│   │   │   │   │   └── board/
+│   │   │   │   │       ├── page.tsx      # Redirect para primeiro board ou empty state
+│   │   │   │   │       └── [boardId]/
+│   │   │   │   │           ├── actions.ts# Server Actions: chamam a API
+│   │   │   │   │           └── page.tsx  # Dashboard principal (single-screen)
+│   │   │   │   ├── share/[token]/page.tsx# Visualização pública view-only
+│   │   │   │   ├── layout.tsx            # Root layout
+│   │   │   │   └── page.tsx              # Redirect → login ou board
+│   │   │   ├── components/
+│   │   │   │   ├── ui/                   # shadcn/ui (gerado)
+│   │   │   │   ├── panels/               # Entradas, Saídas, Fechamento
+│   │   │   │   ├── modals/               # TransactionModal
+│   │   │   │   ├── board/                # Header, calendário, import CSV, reservas, share...
+│   │   │   │   └── layout/
+│   │   │   ├── lib/
+│   │   │   │   ├── api/schema.d.ts       # GERADO do OpenAPI (openapi-typescript). Não editar à mão
+│   │   │   │   ├── api-client.ts         # openapi-fetch (server-only), repassa o Cookie
+│   │   │   │   ├── money.ts              # formatação BRL e aritmética em centavos
+│   │   │   │   └── utils.ts              # cn() etc.
+│   │   │   └── proxy.ts                  # Checa presença do cookie de sessão; matcher exclui /api
+│   │   └── next.config.ts                # rewrites: /api/:path* → API_INTERNAL_URL
+│   └── api/                              # ASP.NET Core
+│       ├── src/Financas.Api/
+│       │   ├── Features/
+│       │   │   ├── Auth/                 # login, callback, logout, me, allowlist
+│       │   │   ├── Boards/               # lista, detalhe, BoardAccess (autorização)
+│       │   │   ├── Transacoes/           # resumo do mês, sugestões, CRUD, categoria em massa, import Nubank
+│       │   │   ├── Reservas/
+│       │   │   └── Compartilhamento/     # criar link, leitura pública por token
+│       │   ├── Data/                     # AppDbContext, Entities, Configurations, Migrations/
+│       │   └── Program.cs
+│       ├── openapi/openapi.json          # GERADO no dotnet build (commitado); fonte do gen:api
+│       ├── tests/Financas.Api.Tests/
+│       └── Financas.sln
+├── infra/postgres/seed.example.sql       # accounts, boards, users e papéis iniciais
+├── docker-compose.dev.yml                # postgres:18
+├── .env.example
+├── docs/refactor-plan.md
+├── AGENTS.md                             # fonte das regras do agente
+├── CLAUDE.md                             # contém apenas "@AGENTS.md"
+└── README.md
 ```
 
 ### 3.2 Fluxo de Dados
 
 ```
-Supabase DB (PostgreSQL + RLS)
-        ↓
-Supabase JS Client (lib/supabase/)
-        ↓
-Server Components / Route Handlers (app/)
-        ↓
+PostgreSQL 18
+      ↑ EF Core / Npgsql
+API ASP.NET Core (Features/*, BoardAccess)    ←  cookie de sessão HttpOnly
+      ↑ HTTP (API_INTERNAL_URL, com o Cookie repassado)
+Server Components / Server Actions (apps/web/src/app)
+      ↓
 Client Components (components/)
-        ↓
+      ↓
 UI (shadcn/ui + Tailwind)
 ```
+
+- O browser fala só com o Next, no mesmo origin. Chamadas a `/api/*` passam por rewrite do Next para a API (em dev) e, no futuro, por um reverse proxy. Não há CORS.
+- Nenhum token chega ao browser: a sessão é um cookie HttpOnly emitido pela API.
+- Totais, saldos e agrupamentos por categoria são calculados na API (SQL e C#). O front só formata.
 
 ---
 
@@ -145,12 +151,12 @@ type Transaction = {
   id: string
   board_id: string     // FK → boards
   type: 'entrada' | 'saida'
-  amount: number       // decimal(12,2)
+  amount: string       // decimal(12,2) como string no JSON: "1234.56"
   description: string
   category: string     // ex: "Doações", "Custos Operacionais"
   date: string         // date (YYYY-MM-DD)
   created_at: string
-  created_by: string   // FK → auth.users
+  created_by: string   // FK → users
   updated_at: string | null
   updated_by: string | null
 }
@@ -182,8 +188,8 @@ Vincula usuário a um board com um nível de acesso.
 ```typescript
 type UserRole = {
   id: string
-  user_id: string      // FK → auth.users
-  board_id: string     // FK → boards (null = acesso global para admin)
+  user_id: string      // FK → users
+  board_id: string | null // FK → boards (null = papel global, vale para todos os boards)
   role: 'admin' | 'tesoureiro' | 'viewer'
 }
 ```
@@ -196,8 +202,8 @@ type FinancialReserve = {
   id: string
   board_id: string     // FK → boards
   name: string          // "Caixinha", "Poupanca"
-  amount: number         // decimal(12,2)
-  created_by: string    // FK → auth.users
+  amount: string         // decimal(12,2) como string no JSON
+  created_by: string    // FK → users
   created_at: string
 }
 ```
@@ -217,7 +223,7 @@ type BoardShareLink = {
   id: string
   board_id: string       // FK → boards
   token_hash: string     // hash do token público; token cru não fica salvo
-  created_by: string     // FK → auth.users
+  created_by: string     // FK → users
   created_at: string
   revoked_at: string | null
   expires_at: string | null
@@ -230,58 +236,94 @@ Regras:
 - Token cru só aparece no momento de geração/cópia
 - Servidor valida token via hash antes de buscar board/transações
 - MVP pode usar `expires_at = null`; revogação fica via `revoked_at`
+- Gerar link exige permissão de mutação (`admin`/`tesoureiro`); o botão de compartilhar não aparece para `viewer`
+- Revogar e listar links não têm UI no escopo atual (backlog); revogar é setar `revoked_at` no banco
+
+### 4.8 User (Usuário Cadastrado)
+Allowlist de login. Só e-mails presentes aqui conseguem entrar. Não há auto-cadastro.
+
+```typescript
+type User = {
+  id: string
+  email: string          // normalizado: trim + lower; único case-insensitive
+  display_name: string | null
+  is_active: boolean     // false = login negado e sessão derrubada no request seguinte
+  created_at: string
+  last_login_at: string | null
+}
+```
+
+### 4.9 Dinheiro
+- Valores monetários são `numeric(12,2)` no banco e `decimal` na API. Nunca `float`.
+- No JSON, trafegam como **string** decimal (`"1234.56"`).
+- Totais, saldos e grupos por categoria são calculados na API. O front só formata (BRL) e, quando precisa somar (ajustes temporários da imagem de fechamento), usa **centavos inteiros**.
+- Entrada de formulário aceita vírgula (`"1.234,56"`); o front normaliza antes de enviar. A API exige valor maior que 0 e arredonda para 2 casas (`AwayFromZero`).
+- O saldo anterior é um `SUM` com sinal feito no banco, sem limite de linhas.
 
 ---
 
-## 5. Schema SQL (Supabase)
+## 5. Schema do Banco (PostgreSQL)
+
+O schema é criado e versionado pelas **migrations do EF Core** (`apps/api/src/Financas.Api/Data/Migrations/`). O SQL abaixo é a referência do resultado esperado. Nomes em snake_case, gerados por `UseSnakeCaseNamingConvention()`.
 
 ```sql
+-- users: allowlist de login. Não existe auto-cadastro.
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,                 -- sempre gravado normalizado (trim + lower)
+  display_name text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  last_login_at timestamptz
+);
+create unique index users_email_lower_idx on users (lower(email));
+
 -- accounts
 create table accounts (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
 -- boards
 create table boards (
   id uuid primary key default gen_random_uuid(),
-  account_id uuid references accounts(id) on delete cascade not null,
+  account_id uuid not null references accounts(id) on delete cascade,
   name text not null,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
 -- transactions
 create table transactions (
   id uuid primary key default gen_random_uuid(),
-  board_id uuid references boards(id) on delete cascade not null,
-  type text check (type in ('entrada', 'saida')) not null,
+  board_id uuid not null references boards(id) on delete cascade,
+  type text not null check (type in ('entrada', 'saida')),
   amount numeric(12,2) not null check (amount > 0),
   description text not null,
   category text not null,
   date date not null,
-  created_by uuid references auth.users(id) not null,
-  created_at timestamptz default now(),
-  updated_by uuid references auth.users(id),
+  created_by uuid not null references users(id),
+  created_at timestamptz not null default now(),
+  updated_by uuid references users(id),
   updated_at timestamptz
 );
 
--- user_roles
+-- user_roles (board_id null = papel global)
 create table user_roles (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
+  user_id uuid not null references users(id) on delete cascade,
   board_id uuid references boards(id) on delete cascade,
-  role text check (role in ('admin', 'tesoureiro', 'viewer')) not null,
-  unique(user_id, board_id)
+  role text not null check (role in ('admin', 'tesoureiro', 'viewer')),
+  unique nulls not distinct (user_id, board_id)   -- impede papel global duplicado
 );
 
 -- board_share_links
 create table board_share_links (
   id uuid primary key default gen_random_uuid(),
-  board_id uuid references boards(id) on delete cascade not null,
+  board_id uuid not null references boards(id) on delete cascade,
   token_hash text not null unique,
-  created_by uuid references auth.users(id) not null,
-  created_at timestamptz default now(),
+  created_by uuid not null references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
   revoked_at timestamptz,
   expires_at timestamptz
 );
@@ -289,72 +331,60 @@ create table board_share_links (
 -- financial_reserves
 create table financial_reserves (
   id uuid primary key default gen_random_uuid(),
-  board_id uuid references boards(id) on delete cascade not null,
+  board_id uuid not null references boards(id) on delete cascade,
   name text not null,
   amount numeric(12,2) not null check (amount > 0),
-  created_by uuid references auth.users(id) not null,
-  created_at timestamptz default now()
+  created_by uuid not null references users(id),
+  created_at timestamptz not null default now()
 );
 
--- indices essenciais do MVP
-create index transactions_board_date_idx on transactions(board_id, date desc);
-create index transactions_board_category_idx on transactions(board_id, category);
-create index transactions_board_description_idx on transactions(board_id, description);
-create index board_share_links_board_id_idx on board_share_links(board_id);
-create index board_share_links_active_idx on board_share_links(token_hash)
-  where revoked_at is null;
-create index financial_reserves_board_id_idx on financial_reserves(board_id);
+-- índices do MVP
+create index transactions_board_date_idx on transactions (board_id, date);
+create index transactions_board_category_idx on transactions (board_id, category);
+create index transactions_board_description_idx on transactions (board_id, description);
+create index user_roles_user_id_idx on user_roles (user_id);
+create index board_share_links_board_id_idx on board_share_links (board_id);
+create index financial_reserves_board_id_idx on financial_reserves (board_id);
 ```
+
+Notas:
+- `transactions.updated_at` e `updated_by` são preenchidos pela API em toda edição (PUT, descrição, categoria em massa). O `supabase/schema.sql` antigo não tinha essas colunas.
+- `created_by` e `updated_by` apontam para `users` (antes, `auth.users` do Supabase).
+- Todo valor monetário é `numeric(12,2)` no banco e `decimal` no C#. Nunca `float` nem `double`.
 
 ---
 
-## 6. Row Level Security (RLS)
+## 6. Autorização (na API)
 
-### Política por Role
+O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao banco, e a autorização é centralizada em um serviço `BoardAccess` usado por todo endpoint de board.
 
-| Role | SELECT | INSERT | UPDATE | DELETE |
-|---|---|---|---|---|
-| admin | ✅ global | ✅ global | ✅ global | ✅ global |
-| tesoureiro | ✅ boards vinculados | ✅ boards vinculados | ✅ boards vinculados | ✅ boards vinculados |
-| viewer | ✅ board próprio | ❌ | ❌ | ❌ |
-| público view-only | ✅ apenas via `/share/[token]` | ❌ | ❌ | ❌ |
+### Regras
 
-```sql
--- Habilitar RLS
-alter table transactions enable row level security;
-alter table boards enable row level security;
+| Papel | Leitura | Escrita (transações, reservas, links) |
+|---|---|---|
+| `admin` ou `tesoureiro` no board | ✅ boards vinculados | ✅ boards vinculados |
+| `admin` ou `tesoureiro` global (`board_id` null) | ✅ todos os boards | ✅ todos os boards |
+| `viewer` no board | ✅ board vinculado | ❌ |
+| `viewer` global | ✅ todos os boards | ❌ |
+| Link público view-only | ✅ apenas via `/api/share/{token}/...` | ❌ |
 
--- Exemplo: política de leitura de transactions
-create policy "users can view their board transactions"
-  on transactions for select
-  using (
-    board_id in (
-      select board_id from user_roles
-      where user_id = auth.uid()
-    )
-  );
-
--- Exemplo: política de insert de transactions
-create policy "usuarios can insert transactions"
-  on transactions for insert
-  with check (
-    board_id in (
-      select board_id from user_roles
-      where user_id = auth.uid()
-      and role in ('admin', 'tesoureiro')
-    )
-    and created_by = auth.uid()
-  );
-```
+- `CanView(boardId)`: o usuário tem qualquer papel no board **ou** qualquer papel global. (Diferença em relação ao RLS antigo, em que só o `admin` global lia tudo e o `tesoureiro` global escrevia sem poder ler.)
+- `CanMutate(boardId)`: o usuário tem papel `admin` ou `tesoureiro` no board, ou global.
+- Board que o usuário não pode ver responde **404**, como o `notFound()` atual. Usuário que vê o board mas não pode mutar recebe **403**.
+- Toda escrita checa `CanMutate` explicitamente. Nenhuma depende de efeito colateral do banco.
+- `created_by` e `updated_by` vêm sempre da sessão, nunca do corpo da requisição.
+- Todo endpoint, exceto `GET /api/health`, o login e o link público, exige sessão. Sem sessão: 401 em JSON, sem redirect.
+- **CSRF:** cookie `SameSite=Lax`, e métodos não-GET com header `Origin` presente e diferente de `App:PublicOrigin` são rejeitados.
 
 ### Link público view-only
-- `board_share_links` não deve ter `SELECT` liberado para `anon`
-- Token público deve ser validado apenas no servidor, usando hash
-- A rota `/share/[token]` usa acesso server-side controlado para buscar somente:
-  - board público validado pelo token
-  - transações do mês selecionado
-  - totais de entradas, saídas e saldo
-- Nenhuma Server Action de mutação deve existir na rota pública
+- O token público é validado apenas na API, por hash (SHA-256). O token cru nunca é salvo.
+- `GET /api/share/{token}/months/{yyyy-MM}` é anônimo e devolve somente:
+  - nome do board;
+  - transações do mês selecionado;
+  - totais de entradas, saídas, saldo anterior, saldo final e total de reservas.
+- Não devolve sugestões, nem a lista de reservas.
+- Não existe endpoint de mutação acessível sem sessão.
+- Token inexistente, revogado (`revoked_at`) ou expirado (`expires_at`) responde 404.
 
 ---
 
@@ -435,7 +465,7 @@ create policy "usuarios can insert transactions"
 - Cada transação exibida deve ter ações discretas: editar e remover
 - Editar abre `TransactionModal` em modo edição
 - Remover pede confirmação antes de excluir
-- Remoção e edição respeitam RLS e role do usuário
+- Remoção e edição são autorizadas pela API conforme o papel do usuário (seção 6)
 - Viewer não vê ações de mutação
 - Descrição pode ser editada rapidamente direto no dashboard
 - Ao clicar/focar no campo de descrição, o campo entra em modo edição inline
@@ -458,7 +488,7 @@ create policy "usuarios can insert transactions"
 - Viewer não vê checkboxes nem barra de edição em lote
 
 ### 7.8 Link Público View-Only
-- Header mostra comando para gerar/copiar link público do board atual
+- Header mostra comando para gerar/copiar link público do board atual, apenas para `admin` e `tesoureiro` (oculto para `viewer`)
 - Link abre `/share/[token]`
 - Página pública reaproveita visualização do dashboard, mas sem:
   - user menu
@@ -466,7 +496,7 @@ create policy "usuarios can insert transactions"
   - editar/remover
   - board selector
   - gerar imagem de fechamento
-- Página pública mantém navegação mensal simples
+- Página pública mantém navegação mensal simples; o botão "Hoje" volta para o mês **atual**, não para o mês exibido
 - Se token inválido, expirado ou revogado: renderizar `notFound()`
 
 ### 7.9 Importação de Extrato CSV Nubank
@@ -484,9 +514,11 @@ create policy "usuarios can insert transactions"
 - `amount` é salvo sempre como valor absoluto
 - Categoria padrão para linhas importadas: `Dados importados`
 - MVP não faz deduplicação; importar o mesmo arquivo novamente cria novas transações
-- Importação respeita RLS e só aparece para roles com permissão de mutação (`admin` e `tesoureiro`)
+- Importação é autorizada pela API e só aparece para roles com permissão de mutação (`admin` e `tesoureiro`)
 - Após importação, dashboard revalida; transações aparecem nos meses correspondentes às datas do CSV
 - Erros de formato devem retornar feedback claro sem quebrar o dashboard
+- A importação é tudo ou nada: uma linha inválida rejeita o arquivo inteiro, e as inserções acontecem em uma única transação de banco
+- O parser roda na API (`POST /api/boards/{boardId}/transactions/import/nubank`, multipart)
 
 ### 7.10 Imagem de Fechamento Mensal
 - Objetivo: gerar arquivo de imagem (`.png`) com resumo mensal para compartilhamento externo
@@ -522,20 +554,51 @@ create policy "usuarios can insert transactions"
 
 ## 8. Autenticação
 
-- Provider: Supabase Auth (email/password)
-- Proteção de rotas via `proxy.ts` (Next.js 16; `middleware.ts` foi substituído)
-- Sessão gerenciada pelo `@supabase/ssr`
-- Redirect automático: não autenticado → `/login`
+- Provider único: **Google** (OAuth), implementado no backend ASP.NET Core. Não há login por e-mail e senha, nem recuperação de senha.
+- A sessão é um cookie `citros_session`: HttpOnly, `SameSite=Lax`, `Secure` conforme o request, 7 dias com expiração deslizante.
+- **Sem auto-cadastro.** Só entra quem já está na tabela `users`.
+
+### Fluxo
+1. `/login` mostra o botão "Entrar com Google", que leva a `/api/auth/login?returnUrl=<caminho>`. O `returnUrl` só é aceito se for um caminho relativo (começa com `/` e não com `//`).
+2. A API redireciona para o Google. O callback é `/api/auth/signin-google`.
+3. Antes de criar a sessão, a API:
+   - exige `email_verified = true` no retorno do Google;
+   - normaliza o e-mail (trim + lower) e o procura em `users`, comparação case-insensitive, exigindo `is_active = true`.
+4. Falha na verificação ou usuário não encontrado: **nenhuma sessão é criada** e o usuário volta para `/login?error=unverified` ou `/login?error=not_allowed`.
+5. Sucesso: a API grava `last_login_at`, emite o cookie (com `sub = users.id`) e redireciona para o `returnUrl`.
+6. A cada request autenticado, a API revalida `users.is_active`. Usuário desativado perde a sessão no request seguinte.
+7. Logout: `POST /api/auth/logout`. Usuário atual: `GET /api/me`.
+
+### Mesmo origin
+- O callback fica sob `/api` e a URI de redirect usa o host e a porta do **Next**: dev `http://localhost:3000/api/auth/signin-google`.
+- A API monta URLs absolutas a partir de `App:PublicOrigin`, não dos headers do proxy.
+- `proxy.ts` (Next 16) só verifica se o cookie existe e **exclui `/api` do matcher**. A validação real é feita no layout `(app)` com `GET /api/me`.
+
+### Rotas públicas (front)
+`/login` e `/share/*`. Todo o resto exige sessão.
 
 ---
 
 ## 9. Variáveis de Ambiente
 
+Ver `.env.example`.
+
 ```bash
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=     # apenas server-side
+# Postgres (docker-compose.dev.yml)
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
+
+# API (appsettings / user-secrets)
+ConnectionStrings__Default=
+Google__ClientId=              # apenas server-side (dev: dotnet user-secrets)
+Google__ClientSecret=          # apenas server-side
+App__PublicOrigin=             # origin público do Next, ex.: http://localhost:3000
+Database__MigrateOnStartup=    # true em dev
+DataProtection__KeysPath=      # opcional em dev; volume persistente em produção
+
+# Web
+API_INTERNAL_URL=              # ex.: http://localhost:5080 (rewrites e fetch server-side)
 ```
 
 ---
@@ -544,11 +607,13 @@ SUPABASE_SERVICE_ROLE_KEY=     # apenas server-side
 
 | Role | Descrição | Escopo |
 |---|---|---|
-| `admin` | CRUD total em Accounts, Boards e Usuários | Global |
-| `tesoureiro` | Cria, edita e remove transações | Boards vinculados |
-| `viewer` | Apenas visualiza fechamento | Board específico |
+| `admin` | Lê e altera transações, reservas e links | Board vinculado ou global |
+| `tesoureiro` | Lê e altera transações, reservas e links | Board vinculado ou global |
+| `viewer` | Apenas visualiza o fechamento | Board vinculado ou global |
 
-Para o MVP, `admin` e `tesoureiro` têm as mesmas permissões sobre transações do board. Gestão avançada de usuários/boards fica fora do lançamento.
+Para o MVP, `admin` e `tesoureiro` têm as mesmas permissões sobre os dados do board. Um papel com `board_id` nulo vale para todos os boards (regras detalhadas na seção 6).
+
+Não há tela de administração. Usuários, contas, boards e papéis são cadastrados por seed SQL (`infra/postgres/seed.example.sql`), inclusive em produção.
 
 ---
 
@@ -562,23 +627,14 @@ Para o MVP, `admin` e `tesoureiro` têm as mesmas permissões sobre transações
 
 ### Acesso ao Banco de Dados
 
-**Regra:** todo acesso ao Supabase vive exclusivamente em `lib/supabase/queries/`. Componentes e hooks **nunca** importam o cliente Supabase diretamente.
+**Regra:** só a API acessa o PostgreSQL, via EF Core, dentro de `apps/api/src/Financas.Api/Features/*` e `Data/`. O front **nunca** fala com o banco.
 
-```typescript
-// ✅ correto — lib/supabase/queries/transactions.ts
-export async function getTransactions(boardId: string): Promise<Transaction[]> {
-  const { data } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('board_id', boardId)
-  return data ?? []
-}
-
-// ❌ errado — chamar supabase direto no componente ou hook
-const { data } = await supabase.from('transactions').select('*')
-```
-
-Essa convenção evita lock-in sem adicionar camadas de abstração desnecessárias. Se a infraestrutura mudar, apenas os arquivos em `queries/` precisam ser alterados.
+- O front consome a API por meio do cliente gerado (`apps/web/src/lib/api/schema.d.ts` + `lib/api-client.ts`, `server-only`). Componentes não chamam `fetch` para a API diretamente.
+- `lib/api/schema.d.ts` é gerado do OpenAPI (`pnpm gen:api`) e **não se edita à mão**. O `apps/api/openapi/openapi.json` é gerado no `dotnet build` e commitado.
+- Toda chamada server-side à API repassa o header `Cookie` da requisição (centralizado em `api-client.ts`).
+- Endpoints de board passam pelo `BoardAccess` (seção 6). Nenhuma regra de autorização fica só no front.
+- Regras de negócio e cálculos financeiros ficam na API. O front não soma valores monetários, exceto em centavos inteiros nos ajustes temporários da imagem de fechamento.
+- Mudanças de schema só por migration do EF Core.
 
 ### Nomenclatura
 - Componentes: PascalCase (`TransactionModal.tsx`)
@@ -728,7 +784,6 @@ chore: atualiza dependências
 - [ ] Rodar `pnpm typecheck`
 - [ ] Rodar `pnpm lint`
 - [ ] Rodar `pnpm build`
-- [ ] Rodar Supabase advisors após migrações
 - [ ] Testar usuário com board: login → `/board` → mês atual
 - [ ] Testar criar, editar e remover transação no mês selecionado
 - [ ] Testar edição rápida de descrição com confirmar/cancelar
@@ -744,11 +799,28 @@ chore: atualiza dependências
 - [ ] Testar que `viewer` e link público veem o total de reservas mas não o botão de gestão
 - [ ] Testar que o total de reservas não altera o saldo final em nenhum cenário
 
+### Fase 15 — Migração Supabase → ASP.NET Core + PostgreSQL 🚧
+Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md](../docs/refactor-plan.md). Cada etapa deixa o projeto funcionando e é commitável isoladamente.
+- [x] Etapa 0 — Spec atualizado para a arquitetura alvo
+- [ ] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
+- [ ] Etapa 2 — Reestruturar em monorepo (`apps/web/src`), criar `CLAUDE.md` com `@AGENTS.md`
+- [ ] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
+- [ ] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
+- [ ] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
+- [ ] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
+- [ ] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
+- [ ] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
+- [ ] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
+
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo
-- [ ] Página de administração (CRUD de boards/usuários)
+- [ ] Página de administração (CRUD de boards/usuários/papéis)
+- [ ] Revogar e listar links de compartilhamento
+- [ ] Tabela própria de categorias
+- [ ] Deploy em VPS: Dockerfiles, `docker-compose.yml` de produção, Caddy (`/api` → API, resto → web), domínio, volume de chaves do Data Protection, backup do Postgres
+- [ ] CI: `dotnet test`, lint e typecheck do web, checagem de `openapi.json` desatualizado
 - [ ] Controle avançado de visibilidade por role
-- [ ] Dark/Light mode
+- [ ] Dark/Light mode (toggle visível)
 - [ ] Feedback de loading states
 - [ ] Tratamento avançado de erros
 - [ ] Testes automatizados abrangentes
@@ -768,6 +840,11 @@ chore: atualiza dependências
 - Editar categoria/descrição altera apenas a transação editada
 - Reservas financeiras não têm filtro por mês; representam um valor acumulado do board
 - Total de reservas financeiras é somente informativo e nunca entra no cálculo do saldo final
+- Login apenas com Google; só e-mails cadastrados em `users` (verificados no Google) entram. Cadastro e papéis iniciais via seed SQL
+- Papel global (`board_id` nulo) lê todos os boards; `admin` e `tesoureiro` globais também escrevem
+- Sessão: cookie de 7 dias deslizantes, com `is_active` revalidado a cada request
+- Front e API compartilham o mesmo origin. Em dev, o Next faz rewrite de `/api/*` para a API; no futuro, um reverse proxy
+- Não há dados a migrar do Supabase: o banco novo começa vazio, populado só pelo seed
 
 ### Perguntas Abertas
 - Nenhuma no momento.
@@ -777,7 +854,11 @@ chore: atualiza dependências
 ## 14. Referências
 
 - [Next.js App Router Docs](https://nextjs.org/docs/app)
-- [Supabase JS Client](https://supabase.com/docs/reference/javascript)
+- [ASP.NET Core](https://learn.microsoft.com/aspnet/core)
+- [EF Core](https://learn.microsoft.com/ef/core) e [Npgsql EF Core Provider](https://www.npgsql.org/efcore)
+- [Autenticação Google no ASP.NET Core](https://learn.microsoft.com/aspnet/core/security/authentication/social/google-logins)
+- [OpenAPI no ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/openapi/overview)
+- [openapi-typescript](https://openapi-ts.dev)
 - [shadcn/ui](https://ui.shadcn.com)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)
 - [Conventional Commits](https://www.conventionalcommits.org)
