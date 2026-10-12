@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0 a 4 concluídas (login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 a 5 concluídas (login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
 
 ## 0. Contexto
 
@@ -364,6 +364,18 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
   - qualquer papel global lê todos os boards;
   - quem não é membro recebe 404.
 - **Verificação:** testes de integração por papel e de cálculo, com mais de 1000 transações anteriores, centavos, mês vazio e virada de ano. Um arquivo `.http` para chamadas manuais.
+- **Executada.** 96 testes passam (Testcontainers + Postgres 18). `apps/api/src/Financas.Api/Financas.Api.http` tem as chamadas manuais.
+  - **`BoardAccess`** tem `GetAsync(userId, boardId)`, que devolve o board mais `canMutate` (ou `null` = 404), e `ListVisibleAsync`. Substitui o par `CanView`/`CanMutate` previsto: as escritas da Etapa 6 fazem `null` → 404 e `!CanMutate` → 403.
+  - **Contrato de resposta** (JSON em camelCase, dinheiro como string):
+    - `MonthSummaryResponse`: `month`, `previousBalance`, `entradasTotal`, `saidasTotal`, `balance`, `reservesTotal`, `transactionCount`, `entradas[]`, `saidas[]`.
+    - Cada grupo é `{category, total, transactions[]}`. Cada transação é `{id, type, amount, description, category, date}`.
+    - `type` é o enum `"entrada" | "saida"`, e `date` é `yyyy-MM-dd`.
+    - Os campos `createdBy`/`createdAt` não vão na resposta (o front não usa).
+  - **Mês inválido responde 400** (antes da checagem de acesso). O front calcula o mês atual (`America/Sao_Paulo`) e sempre manda `yyyy-MM`. Id de board que não é GUID responde 404.
+  - **Ordem das transações no grupo:** data desc, depois `created_at` desc, depois id. O front antigo ordenava só por data, o que deixava empate indefinido.
+  - **Reservas:** `GET .../reserves` exige `CanMutate` (403 para viewer), alinhado ao spec 4.6. Antes, o RLS deixava qualquer membro ler a lista, mas a UI a escondia. **A Etapa 8 só deve chamar esse endpoint quando `canMutate`**; viewer usa `reservesTotal` do resumo.
+  - **Sugestões:** exigem só `CanView` (viewer já vê todas as descrições nos meses).
+  - **Bug de contrato achado e corrigido:** o transformer do OpenAPI marcava todo decimal como `string | null` (comparação lifted com `Type` nulo). Há teste de contrato (`OpenApiContractTests`).
 
 ### Etapa 6: Escrita, import e compartilhamento
 - **Escopo:**

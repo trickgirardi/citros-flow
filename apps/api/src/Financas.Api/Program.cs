@@ -1,8 +1,13 @@
 using Financas.Api.Common;
 using Financas.Api.Data;
 using Financas.Api.Features.Auth;
+using Financas.Api.Features.Boards;
 using Financas.Api.Features.Health;
+using Financas.Api.Features.Reservas;
+using Financas.Api.Features.Transacoes;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -17,7 +22,13 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
     options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
 });
 
-builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new DecimalStringConverter()));
+builder.Services.ConfigureHttpJsonOptions(o =>
+{
+    o.SerializerOptions.Converters.Add(new DecimalStringConverter());
+    // enums como texto camelCase: TransactionType.Entrada vira "entrada"
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+});
+builder.Services.AddScoped<BoardAccess>();
 builder.Services.AddCitrosOpenApi();
 builder.Services.AddCitrosAuth(builder.Configuration);
 builder.Services.AddProblemDetails();
@@ -48,6 +59,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealth();
 app.MapAuth();
+app.MapBoards();
+app.MapTransacoes();
+app.MapReservas();
 
 app.Run();
 

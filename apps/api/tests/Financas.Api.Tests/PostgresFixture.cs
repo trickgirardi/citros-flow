@@ -10,14 +10,22 @@ public class PostgresFixture : IAsyncLifetime
 
     public string ConnectionString => _container.GetConnectionString();
 
+    /// <summary>API compartilhada (Google "configurado", sem PublicOrigin). Testes com outra config criam a sua.</summary>
+    public ApiFactory Factory { get; private set; } = null!;
+
     public async Task InitializeAsync()
     {
         await _container.StartAsync();
         await using var db = TestDb.Open(ConnectionString);
         await db.Database.MigrateAsync();
+        Factory = new ApiFactory(ConnectionString);
     }
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public async Task DisposeAsync()
+    {
+        await Factory.DisposeAsync();
+        await _container.DisposeAsync();
+    }
 }
 
 [CollectionDefinition(Name)]

@@ -1,0 +1,37 @@
+### Chamadas manuais à API (VS Code "REST Client" ou JetBrains HTTP Client).
+###
+### Como autenticar: abra http://localhost:3000/api/auth/login no browser, faça login e copie o valor do
+### cookie `citros_session` (DevTools → Application → Cookies). Cookies não dependem da porta, então
+### o mesmo cookie vale aqui na API direta (5080).
+
+@host = http://localhost:5080
+@session = COLE_O_COOKIE_AQUI
+@boardId = COLE_UM_ID_DE_BOARD
+@month = 2026-05
+
+### Saúde (sem login)
+GET {{host}}/api/health
+
+### Quem sou eu
+GET {{host}}/api/me
+Cookie: citros_session={{session}}
+
+### Boards que eu vejo
+GET {{host}}/api/boards
+Cookie: citros_session={{session}}
+
+### Um board (id, nome, canMutate)
+GET {{host}}/api/boards/{{boardId}}
+Cookie: citros_session={{session}}
+
+### Resumo do mês: saldo anterior, totais, grupos por categoria, saldo final, total de reservas
+GET {{host}}/api/boards/{{boardId}}/months/{{month}}
+Cookie: citros_session={{session}}
+
+### Sugestões de categoria e descrição
+GET {{host}}/api/boards/{{boardId}}/suggestions
+Cookie: citros_session={{session}}
+
+### Reservas financeiras (só admin/tesoureiro; viewer recebe 403)
+GET {{host}}/api/boards/{{boardId}}/reserves
+Cookie: citros_session={{session}}

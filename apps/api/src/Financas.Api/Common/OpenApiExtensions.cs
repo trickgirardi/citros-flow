@@ -19,7 +19,8 @@ public static class OpenApiExtensions
                 var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
                 if (type == typeof(decimal))
                 {
-                    var nullable = (schema.Type & JsonSchemaType.Null) != 0;
+                    // Type pode ser null (conversor customizado): sem o `is`, null & Null != 0 daria true.
+                    var nullable = schema.Type is { } current && (current & JsonSchemaType.Null) != 0;
                     schema.Type = nullable ? JsonSchemaType.String | JsonSchemaType.Null : JsonSchemaType.String;
                     schema.Format = "decimal";
                     schema.Pattern = @"^-?\d+(\.\d+)?$";

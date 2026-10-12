@@ -375,6 +375,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Board que o usuário não pode ver responde **404**, como o `notFound()` atual. Usuário que vê o board mas não pode mutar recebe **403**.
 - Toda escrita checa `CanMutate` explicitamente. Nenhuma depende de efeito colateral do banco.
 - `created_by` e `updated_by` vêm sempre da sessão, nunca do corpo da requisição.
+- A **lista** de reservas (nomes e valores) só é devolvida a `admin`/`tesoureiro` (403 para `viewer`). Viewer e link público veem apenas o total, que vem no resumo do mês (seção 4.6).
 - Todo endpoint, exceto `GET /api/health`, o login e o link público, exige sessão. Sem sessão: 401 em JSON, sem redirect.
 - **CSRF:** cookie `SameSite=Lax`, e métodos não-GET com header `Origin` presente e diferente de `App:PublicOrigin` são rejeitados.
 
@@ -809,7 +810,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 2 — Reestruturar em monorepo (`apps/web/src`), criar `CLAUDE.md` com `@AGENTS.md`
 - [x] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
 - [x] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
-- [ ] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
+- [x] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
 - [ ] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
 - [ ] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
 - [ ] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
