@@ -56,3 +56,8 @@ export function fromCents(cents: number) {
   const abs = Math.abs(Math.round(cents))
   return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`
 }
+
+/** 123456 -> "R$ 1.234,56". Para quem faz conta em centavos (ex.: imagem de fechamento). */
+export function formatCents(cents: number) {
+  return formatMoney(fromCents(cents))
+}

@@ -560,7 +560,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 ## 8. Autenticação
 
 - Provider único: **Google** (OAuth), implementado no backend ASP.NET Core. Não há login por e-mail e senha, nem recuperação de senha.
-- A sessão é um cookie `citros_session`: HttpOnly, `SameSite=Lax`, `Secure` conforme o request, 7 dias com expiração deslizante.
+- A sessão é um cookie `citros_session`: HttpOnly, `SameSite=Lax`, `Secure` conforme o request, válido por 7 dias. Ele só é **reemitido (Set-Cookie) quando faltam menos de 2 dias** para vencer; fora dessa janela a API não manda Set-Cookie. O sliding padrão do ASP.NET (renova após metade da validade) fica desligado.
 - **Sem auto-cadastro.** Só entra quem já está na tabela `users`.
 
 ### Fluxo
@@ -573,6 +573,13 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 5. Sucesso: a API grava `last_login_at`, emite o cookie (com `sub = users.id`) e redireciona para o `returnUrl`.
 6. A cada request autenticado, a API revalida `users.is_active`. Usuário desativado perde a sessão no request seguinte.
 7. Logout: `POST /api/auth/logout`. Usuário atual: `GET /api/me`.
+
+### Manter a sessão viva no front
+- As chamadas do servidor do Next à API não repassam `Set-Cookie` ao browser (Server Components não gravam cookies), então a renovação precisa vir de uma chamada feita **pelo browser**.
+- O componente `SessionKeepAlive`, no layout `(app)`, chama `GET /api/me`: ao carregar a página e quando a aba volta a ficar visível depois de mais de 10 minutos.
+- `401` (sessão vencida ou usuário desativado) leva a `/login?error=session_expired&next=<tela atual>`, com a mensagem "Sua sessão expirou". Falha de rede ou `5xx` é ignorada: a API reiniciando não é motivo para deslogar.
+- A tela `/login` entende os códigos `not_allowed`, `unverified`, `google_failed` (vêm da API) e `session_expired` (vem do front).
+- O `proxy.ts` só olha se o cookie existe e **não** redireciona `/login` para `/board`: com um cookie presente mas inválido isso causaria loop. Quem decide é a página de login, perguntando à API.
 
 ### Mesmo origin
 - O callback fica sob `/api` e a URI de redirect usa o host e a porta do **Next**: dev `http://localhost:3000/api/auth/signin-google`.
@@ -815,7 +822,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
 - [x] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
 - [x] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
-- [ ] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
+- [x] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
 - [ ] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
 
 ### Backlog Pós-MVP
@@ -825,6 +832,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [ ] Tabela própria de categorias
 - [ ] Deploy em VPS: Dockerfiles, `docker-compose.yml` de produção, Caddy (`/api` → API, resto → web), domínio, volume de chaves do Data Protection, backup do Postgres
 - [ ] CI: `dotnet test`, lint e typecheck do web, checagem de `openapi.json` desatualizado
+- [ ] Testes e2e do front no repositório (ex.: Playwright). Na Etapa 8 os fluxos foram validados com um roteiro descartável via Chrome DevTools Protocol, que não ficou no repo
 - [ ] Controle avançado de visibilidade por role
 - [ ] Dark/Light mode (toggle visível)
 - [ ] Feedback de loading states

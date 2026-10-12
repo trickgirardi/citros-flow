@@ -7,7 +7,7 @@ type EntradasPanelProps = {
   categorySuggestions: string[];
   descriptionSuggestions: string[];
   groups: TransactionGroup[];
-  total: number;
+  total: string;
 };
 
 export function EntradasPanel({

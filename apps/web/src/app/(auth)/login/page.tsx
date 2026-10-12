@@ -1,34 +1,47 @@
 import { redirect } from "next/navigation"
 
-import { LoginForm } from "@/components/auth/login-form"
-import { getCurrentUser } from "@/lib/supabase/queries/auth"
+import { Button } from "@/components/ui/button"
+import { getCurrentUser } from "@/lib/auth"
 
 type LoginPageProps = {
   searchParams: Promise<{
+    error?: string | string[]
     next?: string | string[]
-    reset?: string | string[]
   }>
 }
 
-function getNextPath(next: string | string[] | undefined) {
-  const value = Array.isArray(next) ? next[0] : next
+// Códigos de erro que voltam da API (not_allowed, unverified, google_failed) e do próprio front.
+const ERROR_MESSAGES: Record<string, string> = {
+  not_allowed:
+    "Este e-mail nao esta autorizado a acessar o sistema. Fale com o administrador.",
+  unverified:
+    "O Google informou que o e-mail desta conta nao esta verificado. Verifique-o e tente novamente.",
+  google_failed: "Nao foi possivel entrar com o Google. Tente novamente.",
+  session_expired: "Sua sessao expirou. Entre novamente.",
+}
 
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+function getSingle(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function getNextPath(next: string | undefined) {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
     return "/board"
   }
 
-  return value
+  return next
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { next, reset } = await searchParams
-  const nextPath = getNextPath(next)
-  const user = await getCurrentUser()
-  const resetSucceeded = (Array.isArray(reset) ? reset[0] : reset) === "success"
+  const params = await searchParams
+  const nextPath = getNextPath(getSingle(params.next))
+  const errorCode = getSingle(params.error)
 
-  if (user) {
+  if (await getCurrentUser()) {
     redirect(nextPath)
   }
+
+  const errorMessage = errorCode ? ERROR_MESSAGES[errorCode] : undefined
 
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
@@ -36,17 +49,22 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="mb-5 space-y-1">
           <h1 className="text-2xl font-semibold">Gnosis - Fluxo de Caixa</h1>
           <p className="text-sm text-muted-foreground">
-            Acesse com seu e-mail e senha.
+            Acesse com a sua conta Google.
           </p>
         </div>
 
-        {resetSucceeded ? (
-          <p className="mb-4 text-sm text-emerald-600 dark:text-emerald-400">
-            Senha atualizada. Faca login com sua nova senha.
+        {errorMessage ? (
+          <p role="alert" className="mb-4 text-sm text-destructive">
+            {errorMessage}
           </p>
         ) : null}
 
-        <LoginForm nextPath={nextPath} />
+        {/* <a> comum, nao <Link>: o login e um fluxo de redirects para o Google, sem prefetch nem navegacao do Next. */}
+        <Button asChild className="h-9 w-full">
+          <a href={`/api/auth/login?returnUrl=${encodeURIComponent(nextPath)}`}>
+            Entrar com Google
+          </a>
+        </Button>
       </section>
     </main>
   )

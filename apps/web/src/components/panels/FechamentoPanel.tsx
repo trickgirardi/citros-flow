@@ -1,28 +1,27 @@
-import { formatCurrency, type FinancialReserve } from "@/components/panels/dashboard-data"
+import type { FinancialReserve, TransactionGroup } from "@/components/panels/dashboard-data"
 import { FinancialReservesModal } from "@/components/board/FinancialReservesModal"
 import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal"
-import {
-  type ClosingCategorySummary,
-  MonthlyClosingImageModal,
-} from "@/components/board/MonthlyClosingImageModal"
+import { MonthlyClosingImageModal } from "@/components/board/MonthlyClosingImageModal"
 import { TransactionModal } from "@/components/modals/TransactionModal"
+import { formatMoney, toCents } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
+// Valores em dinheiro são strings decimais ("1234.56") e já vêm calculados pela API.
 type FechamentoPanelProps = {
-  balance: number
+  balance: string
   boardName: string
   boardId: string
   canMutate: boolean
   categorySuggestions: string[]
   descriptionSuggestions: string[]
-  entradaCategories: ClosingCategorySummary[]
-  entradasTotal: number
+  entradaGroups: TransactionGroup[]
+  entradasTotal: string
   monthLabel: string
-  previousBalance: number
+  previousBalance: string
   reserves: FinancialReserve[]
-  reservasTotal: number
-  saidaCategories: ClosingCategorySummary[]
-  saidasTotal: number
+  reservasTotal: string
+  saidaGroups: TransactionGroup[]
+  saidasTotal: string
   transactionCount: number
 }
 
@@ -33,17 +32,17 @@ export function FechamentoPanel({
   canMutate,
   categorySuggestions,
   descriptionSuggestions,
-  entradaCategories,
+  entradaGroups,
   entradasTotal,
   monthLabel,
   previousBalance,
   reserves,
   reservasTotal,
-  saidaCategories,
+  saidaGroups,
   saidasTotal,
   transactionCount,
 }: FechamentoPanelProps) {
-  const balanceIsPositive = balance >= 0
+  const balanceIsPositive = toCents(balance) >= 0
 
   return (
     <aside className="flex shrink-0 flex-col rounded-lg border bg-card md:min-h-0">
@@ -57,13 +56,13 @@ export function FechamentoPanel({
       <div className="grid gap-2 p-3">
         <SummaryRow
           label="Saldo anterior"
-          value={formatCurrency(previousBalance)}
+          value={formatMoney(previousBalance)}
         />
         <SummaryRow
           label="Total entradas"
-          value={formatCurrency(entradasTotal)}
+          value={formatMoney(entradasTotal)}
         />
-        <SummaryRow label="Total saidas" value={formatCurrency(saidasTotal)} />
+        <SummaryRow label="Total saidas" value={formatMoney(saidasTotal)} />
 
         <div className="mt-1 flex flex-row items-center justify-between rounded-md border bg-background px-2">
           <p className="text-xs text-muted-foreground">Saldo final</p>
@@ -75,7 +74,7 @@ export function FechamentoPanel({
                 : "text-rose-700 dark:text-rose-300"
             )}
           >
-            {formatCurrency(balance)}
+            {formatMoney(balance)}
           </p>
         </div>
 
@@ -84,20 +83,21 @@ export function FechamentoPanel({
             Total de reservas
           </span>
           <span className="text-sm font-semibold tabular-nums">
-            {formatCurrency(reservasTotal)}
+            {formatMoney(reservasTotal)}
           </span>
         </div>
       </div>
 
       {canMutate ? (
         <div className="mt-auto grid gap-2 border-t p-3">
+          {/* A imagem soma ajustes temporários: recebe centavos inteiros, sem float. */}
           <MonthlyClosingImageModal
             boardName={boardName}
-            entradas={entradaCategories}
+            entradas={toClosingCategories(entradaGroups)}
             monthLabel={monthLabel}
-            previousBalance={previousBalance}
-            reservasTotal={reservasTotal}
-            saidas={saidaCategories}
+            previousBalance={toCents(previousBalance)}
+            reservasTotal={toCents(reservasTotal)}
+            saidas={toClosingCategories(saidaGroups)}
           />
           <>
             <TransactionModal
@@ -121,4 +121,11 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   )
+}
+
+function toClosingCategories(groups: TransactionGroup[]) {
+  return groups.map((group) => ({
+    category: group.category,
+    total: toCents(group.total),
+  }))
 }

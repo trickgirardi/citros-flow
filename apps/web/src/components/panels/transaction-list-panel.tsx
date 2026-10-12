@@ -8,13 +8,13 @@ import {
   updateTransactionsCategory,
 } from "@/app/(app)/board/[boardId]/actions";
 import {
-  formatCurrency,
   formatTransactionDate,
   type TransactionGroup,
 } from "@/components/panels/dashboard-data";
 import { InlineDescriptionEditor } from "@/components/board/InlineDescriptionEditor";
 import { TransactionActions } from "@/components/board/TransactionActions";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 const INITIAL_BULK_CATEGORY_STATE: BulkUpdateTransactionCategoryState = {
@@ -32,7 +32,7 @@ type TransactionListPanelProps = {
   groups: TransactionGroup[];
   tone: "entrada" | "saida";
   title: string;
-  total: number;
+  total: string;
 };
 
 export function TransactionListPanel({
@@ -107,7 +107,7 @@ export function TransactionListPanel({
       <div className="flex shrink-0 items-center justify-between border-b px-3 py-2">
         <div>
           <h2 className="text-sm font-semibold">{title}</h2>
-          <p className="text-xs text-muted-foreground">{formatCurrency(total)}</p>
+          <p className="text-xs text-muted-foreground">{formatMoney(total)}</p>
         </div>
         <div className="flex items-center gap-3">
           {canMutate && transactionIds.length > 0 ? (
@@ -194,7 +194,7 @@ export function TransactionListPanel({
                     {group.category}
                   </h3>
                   <span className="shrink-0 text-xs font-medium">
-                    {formatCurrency(group.total)}
+                    {formatMoney(group.total)}
                   </span>
                 </div>
 
@@ -242,7 +242,7 @@ export function TransactionListPanel({
                       <span
                         className={cn("text-xs font-semibold tabular-nums", amountClassName)}
                       >
-                        {formatCurrency(transaction.amount)}
+                        {formatMoney(transaction.amount)}
                       </span>
                       {canMutate ? (
                         <div className="col-span-4 flex justify-end">

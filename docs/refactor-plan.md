@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0 a 7 concluídas (a API está completa e o cliente TS gerado; login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 a 8 concluídas (o front já consome a API; login Google real ainda pendente de teste manual com credenciais). Falta a Etapa 9 (remover o Supabase).
 
 ## 0. Contexto
 
@@ -127,7 +127,7 @@ Futuro, fora deste escopo: o Caddy assume o papel do rewrite (`/api/*` → api, 
 3. Em `OnTicketReceived`, a API exige `email_verified = true` e procura o e-mail normalizado (trim + lower) em `users` com `is_active = true`.
    - Se não achar, falha sem criar sessão e redireciona para `/login?error=not_allowed` (ou `unverified`).
    - Se achar, troca a identidade pelos claims internos (`sub = users.id`, email, nome), atualiza `last_login_at`, emite o cookie `citros_session` e redireciona para o `returnUrl`.
-4. Cookie: HttpOnly, SameSite=Lax, `Secure` conforme o request (Always em produção futura), 7 dias com expiração deslizante.
+4. Cookie: HttpOnly, SameSite=Lax, `Secure` conforme o request (Always em produção futura), 7 dias, reemitido só quando faltarem menos de 2 dias (decisão da Etapa 8; o sliding padrão fica desligado).
 5. `OnValidatePrincipal` consulta `users.is_active` em todo request. Usuário inativo tem o principal rejeitado e o cookie apagado.
 6. Para rotas `/api/*`, falta de autenticação responde 401 e falta de permissão responde 403, em JSON e sem redirect.
 7. `proxy.ts` só verifica se o cookie existe, porque não consegue decifrá-lo (Data Protection). Quem valida de fato é `app/(app)/layout.tsx`, chamando `GET /api/me`. Um 401 manda para `/login`.
@@ -459,7 +459,7 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
     - corrigir o link "Hoje" da página pública para o mês atual.
 - **Arquivos (representativos):** `src/proxy.ts`, `src/app/(auth)/login/*`, `src/app/(app)/**`, `src/app/share/[token]/page.tsx`, `src/components/panels/*`, `src/components/board/MonthlyClosingImageModal.tsx`, `ShareBoardButton.tsx`, `src/components/layout/logout-button.tsx`.
 - **Concluído quando:** todas as funcionalidades funcionam via `localhost:3000` e nada importa `lib/supabase`.
-- **Verificação:**
+- **Verificação (a seguir, o roteiro original do plano):**
   - `pnpm typecheck && pnpm lint && pnpm build`;
   - roteiro manual:
     - login permitido e negado;
@@ -473,11 +473,34 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
     - imagem do fechamento;
     - logout;
     - viewer sem ações e sem botão de compartilhar.
+- **Executada.**
+  - **Auth:**
+    - `/login` virou um `<a href="/api/auth/login?returnUrl=…">` (não `Link`, para evitar prefetch do fluxo OAuth) e mostra os erros `not_allowed`, `unverified`, `google_failed` e `session_expired`.
+    - O logout é um `<form method="post" action="/api/auth/logout">` direto para a API.
+    - Saíram `forgot-password`, `reset-password`, `auth/confirm`, `components/auth/*`, `login/actions.ts` e `(app)/actions.ts`.
+    - `proxy.ts` só checa a presença do cookie `citros_session` e **não redireciona `/login` → `/board`**: com um cookie presente mas inválido isso daria loop (proxy → `/board` → layout 401 → `/login` → proxy…). Quem decide é a página de login, perguntando a `/api/me`.
+  - **Sessão (decisões do usuário nesta etapa):**
+    - A API reemite o cookie só quando faltam **menos de 2 dias** (`SlidingExpiration` desligado; `ShouldRenew` manual em `SessionCookie`). 8 testes com relógio falso (`SessionRenewalTests`) cobrem: sem Set-Cookie até 4,99 dias, reemissão aos 5,01 e 6,5, nenhuma reemissão logo depois, usuário ativo passa dos 7 dias, e quem some por mais de 7 dias perde a sessão.
+    - `SessionKeepAlive` (layout `(app)`) chama `/api/me` ao carregar a página e quando a aba volta a ficar visível depois de mais de 10 minutos. `401` → `/login?error=session_expired&next=…`. Rede fora ou `5xx` é ignorado de propósito.
+  - **Dados:**
+    - `lib/auth.ts` (`getCurrentUser`), `lib/boards.ts` (`getBoard`, ambos com `cache()` do React para o layout e a página não consultarem duas vezes) e `lib/api-result.ts`. Esse último tem `readData` (401 → login, 404 → `notFound()`), `callApi` (erro da API ou de rede vira texto de tela) e `apiErrorMessage`.
+    - Painéis recebem totais e grupos prontos da API (strings). `dashboard-data.ts` ficou só com tipos e `formatTransactionDate`.
+    - A imagem de fechamento soma os ajustes temporários em **centavos inteiros**.
+    - Sugestões e a lista de reservas só são buscadas quando `canMutate`.
+  - **Actions:** mesmas assinaturas e estados de antes, então os componentes cliente quase não mudaram. O parser do CSV saiu do front; o campo do formulário continua `csvFile` e a action o reenvia como `file`. O limite de 1 MB de corpo das Server Actions do Next continua valendo, como antes.
+  - **Público:** a página `/share/[token]` usa um cliente **sem cookie** (`createPublicApiClient`). O "Hoje" aponta para o mês atual. O botão de compartilhar some para quem não pode alterar.
+  - **Verificação:**
+    - `pnpm typecheck`, `pnpm lint` e `pnpm build` passam; `dotnet test` passa com 210.
+    - O front não tem runner de testes, então validei com a API e o Next em dev reais e o Brave headless via Chrome DevTools Protocol. O roteiro foi descartável (scratchpad, não está no repo): 22 cenários e 70 verificações, todos passando.
+    - Criar, editar, remover (com `confirm`), descrição inline, categoria em lote, reservas, import de CSV bom e ruim (tudo ou nada), geração e leitura pública do link, logout, imagem de fechamento com ajustes, viewer, usuário sem acesso, admin global, navegação entre meses, cookie vencido ou inválido sem loop.
+    - Os cookies de sessão foram fabricados com o mesmo Data Protection da API, num banco `citros_e2e` separado (já removido).
+  - **Não coberto:** login com um Google real (continua pendente) e o `clipboard.writeText` do botão de compartilhar, que o navegador headless nega (o comportamento do botão não mudou).
+  - **Para a Etapa 9:** `lib/share-token.ts` ficou porque o código morto de `lib/supabase/queries/share-links.ts` ainda o importa. Apague os dois juntos.
 
 ### Etapa 9: Remover o Supabase
 - **Escopo:**
   - remover `@supabase/*` do `package.json`;
-  - apagar `src/lib/supabase/`, `src/types/database.ts` e `supabase/schema.sql` (fica no histórico do git);
+  - apagar `src/lib/supabase/`, `src/lib/share-token.ts`, `src/types/database.ts` e `supabase/schema.sql` (ficam no histórico do git);
   - tirar a entrada do Supabase do `.mcp.json`;
   - tirar a linha "Use supabase skill" do `AGENTS.md`;
   - reescrever o README (setup dev, seed, Google OAuth);

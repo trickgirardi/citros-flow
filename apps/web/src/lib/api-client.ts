@@ -24,3 +24,8 @@ export async function createApiClient() {
     cache: "no-store",
   })
 }
+
+/** Cliente sem cookie, para endpoints públicos (link compartilhado). Nunca manda a sessão do usuário. */
+export function createPublicApiClient() {
+  return createClient<paths>({ baseUrl: API_INTERNAL_URL, cache: "no-store" })
+}

@@ -4,7 +4,8 @@ import {
   getMonthScope,
   getSingleSearchParam,
 } from "@/components/board/month-scope"
-import { listBoardsForCurrentUser } from "@/lib/supabase/queries/boards"
+import { createApiClient } from "@/lib/api-client"
+import { readData } from "@/lib/api-result"
 
 type BoardPageProps = {
   searchParams: Promise<{
@@ -15,7 +16,8 @@ type BoardPageProps = {
 export default async function BoardPage({ searchParams }: BoardPageProps) {
   const { month } = await searchParams
   const monthScope = getMonthScope(getSingleSearchParam(month))
-  const boards = await listBoardsForCurrentUser()
+  const api = await createApiClient()
+  const boards = readData(await api.GET("/api/boards"))
   const firstBoard = boards[0]
 
   if (firstBoard) {

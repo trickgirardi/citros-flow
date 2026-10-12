@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { updateSession } from "@/lib/supabase/proxy";
+// Nome do cookie de sessão emitido pela API. O proxy só olha se ele existe: quem valida de verdade
+// é o layout (app), que pergunta à API (/api/me). Cookie vencido ou de usuário desativado passa
+// aqui e é pego lá.
+const SESSION_COOKIE = "citros_session";
 
-const PUBLIC_ROUTES = new Set(["/login", "/forgot-password", "/reset-password"]);
-const PUBLIC_ROUTE_PREFIXES = ["/share/", "/auth/confirm"];
+const PUBLIC_ROUTES = new Set(["/login"]);
+const PUBLIC_ROUTE_PREFIXES = ["/share/"];
 
 function isPublicRoute(pathname: string) {
   return (
@@ -12,25 +15,18 @@ function isPublicRoute(pathname: string) {
   );
 }
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const { user, response } = await updateSession(request);
+export function proxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
 
-  if (!user && !isPublicRoute(pathname)) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (isPublicRoute(pathname) || request.cookies.has(SESSION_COOKIE)) {
+    return NextResponse.next();
   }
 
-  if (user && pathname === "/login") {
-    const boardUrl = request.nextUrl.clone();
-    boardUrl.pathname = "/board";
-    boardUrl.search = "";
-    return NextResponse.redirect(boardUrl);
-  }
-
-  return response;
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = "/login";
+  loginUrl.search = "";
+  loginUrl.searchParams.set("next", `${pathname}${search}`);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

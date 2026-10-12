@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { ImageDown } from "lucide-react"
 
-import { formatCurrency } from "@/components/panels/dashboard-data"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { formatCents, normalizeMoneyInput, toCents } from "@/lib/money"
 
+// Todos os valores aqui são em CENTAVOS (inteiros): a soma dos ajustes temporários não pode usar float.
 export type ClosingCategorySummary = {
   category: string
   total: number
@@ -182,18 +183,15 @@ function parseOptionalCategoryValue(
   }
 }
 
+/** Centavos digitados: 0 se vazio, -1 se inválido. Aceita "10,50", "10.50" e "1.234,56". */
 function parseAmount(value: string | undefined) {
-  if (!value) {
+  if (!value?.trim()) {
     return 0
   }
 
-  const amount = Number(value.replace(",", ".").trim())
+  const normalized = normalizeMoneyInput(value)
 
-  if (!Number.isFinite(amount) || amount < 0) {
-    return -1
-  }
-
-  return Math.round(amount * 100) / 100
+  return normalized === null ? -1 : toCents(normalized)
 }
 
 function aggregateCategories(
@@ -418,7 +416,7 @@ function drawCategoryCard(
     )
     drawText(
       context,
-      `${sign}${formatCurrency(category.total)}`,
+      `${sign}${formatCents(category.total)}`,
       x + width - 42,
       rowY,
       "28px Arial",
@@ -452,7 +450,7 @@ function drawCategoryCard(
   )
   drawText(
     context,
-    `${sign}${formatCurrency(total)}`,
+    `${sign}${formatCents(total)}`,
     x + width - 42,
     totalY + 50,
     "bold 32px Arial",
@@ -505,9 +503,9 @@ function drawFinalBalanceCard(
   )
   drawText(
     context,
-    `Saldo anterior (${formatCurrency(previousBalance)}) + Entradas (${formatCurrency(
+    `Saldo anterior (${formatCents(previousBalance)}) + Entradas (${formatCents(
       entradasTotal
-    )}) - Saídas (${formatCurrency(saidasTotal)})`,
+    )}) - Saídas (${formatCents(saidasTotal)})`,
     width / 2,
     y + 150,
     "30px Arial",
@@ -516,7 +514,7 @@ function drawFinalBalanceCard(
   )
   drawText(
     context,
-    formatCurrency(finalBalance),
+    formatCents(finalBalance),
     width / 2,
     y + 245,
     "bold 76px Arial",
@@ -525,7 +523,7 @@ function drawFinalBalanceCard(
   )
   drawText(
     context,
-    `Reservas financeiras: ${formatCurrency(reservasTotal)}`,
+    `Reservas financeiras: ${formatCents(reservasTotal)}`,
     width / 2,
     y + 310,
     "26px Arial",

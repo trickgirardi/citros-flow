@@ -33,7 +33,7 @@ pnpm dlx supabase gen types typescript --project-id <PROJECT_ID> --schema public
 ## API .NET e login com Google (em migração)
 
 O projeto está migrando do Supabase para uma API ASP.NET Core + PostgreSQL (veja `docs/refactor-plan.md`).
-Até a Etapa 8 o front ainda usa o Supabase; a API e o login Google já funcionam e podem ser testados à parte.
+O front já consome a API (login Google, dados e escritas). O código e as dependências do Supabase ainda estão no repositório e saem na Etapa 9; as instruções de setup do Supabase acima ficam obsoletas até lá.
 
 ### 1. Postgres (Docker)
 
@@ -83,7 +83,7 @@ cd apps/api && dotnet run --project src/Financas.Api    # http://localhost:5080
 cd apps/web && pnpm dev                                   # http://localhost:3000
 ```
 
-Como o botão "Entrar com Google" só entra na Etapa 8, teste abrindo `http://localhost:3000/api/auth/login` no browser. Depois do login, `http://localhost:3000/api/me` devolve seus dados. E-mail não cadastrado volta para `/login?error=not_allowed`. Documentação da API (só em dev): `http://localhost:3000/api/docs`.
+Abra `http://localhost:3000` e use o botão "Entrar com Google". E-mail não cadastrado volta para `/login` com a mensagem de acesso negado. A sessão dura 7 dias e é renovada automaticamente quando faltam menos de 2 dias. Documentação da API (só em dev): `http://localhost:3000/api/docs`.
 
 ### Testes da API
 

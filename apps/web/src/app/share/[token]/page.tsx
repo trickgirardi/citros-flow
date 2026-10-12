@@ -1,26 +1,15 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 
 import {
+  getCurrentMonthKey,
   getMonthScope,
   getSingleSearchParam,
 } from "@/components/board/month-scope"
 import { EntradasPanel } from "@/components/panels/EntradasPanel"
 import { FechamentoPanel } from "@/components/panels/FechamentoPanel"
 import { SaidasPanel } from "@/components/panels/SaidasPanel"
-import {
-  filterTransactionsByType,
-  groupTransactionsByCategory,
-  sumFinancialReserves,
-  sumTransactionBalance,
-  sumTransactions,
-} from "@/components/panels/dashboard-data"
-import { listFinancialReservesByBoardWithServiceRole } from "@/lib/supabase/queries/financial-reserves"
-import { getBoardByShareToken } from "@/lib/supabase/queries/share-links"
-import {
-  listTransactionsBeforeDateWithServiceRole,
-  listTransactionsByBoardWithServiceRole,
-} from "@/lib/supabase/queries/transactions"
+import { createPublicApiClient } from "@/lib/api-client"
+import { readData } from "@/lib/api-result"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 type ShareBoardPageProps = {
@@ -37,34 +26,16 @@ export default async function ShareBoardPage({
   searchParams,
 }: ShareBoardPageProps) {
   const [{ token }, { month }] = await Promise.all([params, searchParams])
-  const board = await getBoardByShareToken(token)
-
-  if (!board) {
-    notFound()
-  }
-
   const monthScope = getMonthScope(getSingleSearchParam(month))
-  const [transactions, previousTransactions, reserves] = await Promise.all([
-    listTransactionsByBoardWithServiceRole({
-      boardId: board.id,
-      endDate: monthScope.endDate,
-      startDate: monthScope.startDate,
-    }),
-    listTransactionsBeforeDateWithServiceRole({
-      beforeDate: monthScope.startDate,
-      boardId: board.id,
-    }),
-    listFinancialReservesByBoardWithServiceRole(board.id),
-  ])
-  const entradas = filterTransactionsByType(transactions, "entrada")
-  const saidas = filterTransactionsByType(transactions, "saida")
-  const entradaGroups = groupTransactionsByCategory(entradas)
-  const saidaGroups = groupTransactionsByCategory(saidas)
-  const entradasTotal = sumTransactions(entradas)
-  const saidasTotal = sumTransactions(saidas)
-  const previousBalance = sumTransactionBalance(previousTransactions)
-  const reservasTotal = sumFinancialReserves(reserves)
+  const api = createPublicApiClient()
+  // Link inexistente, revogado ou expirado: a API responde 404 e a página mostra o 404.
+  const { boardName, summary } = readData(
+    await api.GET("/api/share/{token}/months/{month}", {
+      params: { path: { token, month: monthScope.monthKey } },
+    })
+  )
 
+  // O link público não expõe o id do board: sem canMutate os painéis não usam boardId.
   return (
     <main className="flex h-svh flex-col overflow-hidden bg-muted/30">
       <header className="flex shrink-0 flex-row justify-between gap-2 border-b bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
@@ -72,10 +43,10 @@ export default async function ShareBoardPage({
           <p className="text-xs font-medium text-muted-foreground">
             Fluxo de caixa
           </p>
-          <h1 className="truncate text-sm font-semibold">{board.name}</h1>
+          <h1 className="truncate text-sm font-semibold">{boardName}</h1>
         </div>
         <ShareMonthNavigator
-          currentMonthKey={monthScope.monthKey}
+          currentMonthKey={getCurrentMonthKey()}
           label={monthScope.label}
           nextMonthKey={monthScope.nextMonthKey}
           previousMonthKey={monthScope.previousMonthKey}
@@ -85,43 +56,37 @@ export default async function ShareBoardPage({
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 overflow-hidden p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_20rem] md:grid-rows-1 md:p-4">
         <EntradasPanel
-          boardId={board.id}
+          boardId=""
           canMutate={false}
           categorySuggestions={[]}
           descriptionSuggestions={[]}
-          groups={entradaGroups}
-          total={entradasTotal}
+          groups={summary.entradas}
+          total={summary.entradasTotal}
         />
         <SaidasPanel
-          boardId={board.id}
+          boardId=""
           canMutate={false}
           categorySuggestions={[]}
           descriptionSuggestions={[]}
-          groups={saidaGroups}
-          total={saidasTotal}
+          groups={summary.saidas}
+          total={summary.saidasTotal}
         />
         <FechamentoPanel
-          balance={previousBalance + entradasTotal - saidasTotal}
-          boardName={board.name}
-          boardId={board.id}
+          balance={summary.balance}
+          boardName={boardName}
+          boardId=""
           canMutate={false}
           categorySuggestions={[]}
           descriptionSuggestions={[]}
-          entradaCategories={entradaGroups.map((group) => ({
-            category: group.category,
-            total: group.total,
-          }))}
-          entradasTotal={entradasTotal}
+          entradaGroups={summary.entradas}
+          entradasTotal={summary.entradasTotal}
           monthLabel={monthScope.label}
-          previousBalance={previousBalance}
+          previousBalance={summary.previousBalance}
           reserves={[]}
-          reservasTotal={reservasTotal}
-          saidaCategories={saidaGroups.map((group) => ({
-            category: group.category,
-            total: group.total,
-          }))}
-          saidasTotal={saidasTotal}
-          transactionCount={transactions.length}
+          reservasTotal={summary.reservesTotal}
+          saidaGroups={summary.saidas}
+          saidasTotal={summary.saidasTotal}
+          transactionCount={summary.transactionCount}
         />
       </div>
     </main>

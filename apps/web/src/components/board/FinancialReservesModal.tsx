@@ -11,9 +11,9 @@ import {
   type FinancialReserveFormState,
   updateFinancialReserve,
 } from "@/app/(app)/board/[boardId]/actions";
-import { formatCurrency } from "@/components/panels/dashboard-data";
 import type { FinancialReserve } from "@/components/panels/dashboard-data";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/money";
 import {
   Dialog,
   DialogContent,
@@ -212,7 +212,7 @@ function FinancialReserveRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{reserve.name}</p>
           <p className="text-xs text-muted-foreground tabular-nums">
-            {formatCurrency(reserve.amount)}
+            {formatMoney(reserve.amount)}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
