@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0, 1 e 2 concluídas. Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0, 1, 2 e 3 concluídas. Demais etapas não iniciadas.
 
 ## 0. Contexto
 
@@ -254,7 +254,7 @@ Ficam para o backlog de deploy: `docker-compose.yml` de produção, `infra/Caddy
 - **`users` (nova):**
   - colunas `id uuid`, `email text not null`, `display_name text null`, `is_active bool not null default true`, `created_at`, `last_login_at null`;
   - índice único em `lower(email)`;
-  - o e-mail é gravado já normalizado.
+  - o e-mail é gravado já normalizado. **Desvio (Etapa 3):** o EF Core não expressa índice em `lower(email)`, então a unicidade case-insensitive é garantida por índice único em `email` + check `email = lower(btrim(email))`.
 - **`created_by`, `user_roles.user_id` e `transactions.updated_by`** apontam para `users(id)`.
 - **`user_roles`:** `unique(user_id, board_id) NULLS NOT DISTINCT`. Corrige a duplicata de papel global.
 - **`transactions`:**
@@ -314,6 +314,12 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
   - o schema bate com a seção 3.8 (nomes snake_case iguais ao `schema.sql`);
   - `dotnet build` **sem Postgres e sem secrets** gera `apps/api/openapi/openapi.json`.
 - **Verificação:** os comandos acima, `\d+` no `psql` e um build com o Postgres parado.
+- **Executada.** Desvios e achados:
+  - **Porta do Postgres:** a 5432 do host estava ocupada por outro projeto (`keycloak-db`) e a 5433 por `citros-api-postgres`. O compose usa `POSTGRES_PORT` (padrão do `.env.example` e de `appsettings.Development.json`: **5434**).
+  - **E-mail único:** check + índice único em vez de índice em `lower(email)` (ver seção 3.8).
+  - **Versão do EF Core:** `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.3 exige EF Core 10.0.4, então `Microsoft.EntityFrameworkCore.Design` e o `dotnet-ef` (ferramenta local em `apps/api/dotnet-tools.json`) foram fixados em **10.0.4** para evitar conflito de versões.
+  - **Guard de design-time confirmado como necessário:** o gerador de OpenAPI e o `dotnet ef` executam o `Program.cs` depois do `Build()`. Sem o guard (`Assembly.GetEntryAssembly()` = `GetDocument.Insider`/`ef`), `Database:MigrateOnStartup=true` quebrava o build com o banco parado.
+  - **Fora da lista do plano:** o pacote `Microsoft.NET.Test.Sdk` e `xunit.runner.visualstudio` (já vêm no template `xunit`) e a ferramenta local `dotnet-ef`. `coverlet.collector` foi removido.
 
 ### Etapa 4: Autenticação Google e allowlist
 - **Escopo:**

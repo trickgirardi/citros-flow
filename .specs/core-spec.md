@@ -270,13 +270,14 @@ O schema é criado e versionado pelas **migrations do EF Core** (`apps/api/src/F
 -- users: allowlist de login. Não existe auto-cadastro.
 create table users (
   id uuid primary key default gen_random_uuid(),
-  email text not null,                 -- sempre gravado normalizado (trim + lower)
+  email text not null unique,          -- sempre gravado normalizado (trim + lower)
   display_name text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
-  last_login_at timestamptz
+  last_login_at timestamptz,
+  constraint ck_users_email_normalized check (email = lower(btrim(email)))
 );
-create unique index users_email_lower_idx on users (lower(email));
+-- unique + check de normalização = unicidade case-insensitive (o EF não expressa índice em lower(email))
 
 -- accounts
 create table accounts (
@@ -350,6 +351,7 @@ create index financial_reserves_board_id_idx on financial_reserves (board_id);
 Notas:
 - `transactions.updated_at` e `updated_by` são preenchidos pela API em toda edição (PUT, descrição, categoria em massa). O `supabase/schema.sql` antigo não tinha essas colunas.
 - `created_by` e `updated_by` apontam para `users` (antes, `auth.users` do Supabase).
+- Nomes de PKs, FKs, índices e constraints são gerados pelo EF Core (`pk_*`, `fk_*`, `ix_*`) e podem diferir dos nomes ilustrativos do SQL acima; a estrutura é a mesma. O `unique nulls not distinct` de `user_roles` é um índice único com `NULLS NOT DISTINCT`.
 - Todo valor monetário é `numeric(12,2)` no banco e `decimal` no C#. Nunca `float` nem `double`.
 
 ---
@@ -588,6 +590,7 @@ Ver `.env.example`.
 POSTGRES_USER=
 POSTGRES_PASSWORD=
 POSTGRES_DB=
+POSTGRES_PORT=                 # porta no host; 5434 se a 5432 estiver ocupada
 
 # API (appsettings / user-secrets)
 ConnectionStrings__Default=
@@ -804,7 +807,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 0 — Spec atualizado para a arquitetura alvo
 - [x] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
 - [x] Etapa 2 — Reestruturar em monorepo (`apps/web/src`), criar `CLAUDE.md` com `@AGENTS.md`
-- [ ] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
+- [x] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
 - [ ] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
 - [ ] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
 - [ ] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
