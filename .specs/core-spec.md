@@ -802,7 +802,7 @@ chore: atualiza dependências
 ### Fase 15 — Migração Supabase → ASP.NET Core + PostgreSQL 🚧
 Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md](../docs/refactor-plan.md). Cada etapa deixa o projeto funcionando e é commitável isoladamente.
 - [x] Etapa 0 — Spec atualizado para a arquitetura alvo
-- [ ] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
+- [x] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
 - [ ] Etapa 2 — Reestruturar em monorepo (`apps/web/src`), criar `CLAUDE.md` com `@AGENTS.md`
 - [ ] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
 - [ ] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`

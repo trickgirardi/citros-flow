@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapa 0 concluída (spec atualizado). Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 e 1 concluídas. Demais etapas não iniciadas.
 
 ## 0. Contexto
 
