@@ -12,7 +12,6 @@ Always:
 - Use Ask before architectural changes
 - Use Caveman
 - Use shadcn skill when working shadcn/ui
-- Use supabase skill when working Supabase
 - Use find-skills skill to discover new useful skills
 - Avoid unnecessary abstractions
 - Keep implementations simple

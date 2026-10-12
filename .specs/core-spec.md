@@ -1,6 +1,6 @@
 # 🍋 SPEC — Citros Flow
 
-> **Estado do documento:** este spec descreve a arquitetura **alvo**: Next.js + API ASP.NET Core + PostgreSQL, com login Google. A migração a partir do Supabase está em andamento, em etapas, conforme [docs/refactor-plan.md](../docs/refactor-plan.md). Até a Etapa 9 do plano, o código ainda usa o Supabase. As funcionalidades das Fases 1–13 do roadmap continuam valendo.
+> **Estado do documento:** este spec descreve a arquitetura **atual**: Next.js + API ASP.NET Core + PostgreSQL, com login Google. O projeto nasceu sobre o Supabase e migrou em etapas, conforme [docs/refactor-plan.md](../docs/refactor-plan.md) (concluída). As Fases 1–13 do roadmap abaixo são histórico e citam o Supabase por isso; as funcionalidades que elas entregaram continuam valendo.
 
 ---
 
@@ -812,7 +812,7 @@ chore: atualiza dependências
 - [ ] Testar que `viewer` e link público veem o total de reservas mas não o botão de gestão
 - [ ] Testar que o total de reservas não altera o saldo final em nenhum cenário
 
-### Fase 15 — Migração Supabase → ASP.NET Core + PostgreSQL 🚧
+### Fase 15 — Migração Supabase → ASP.NET Core + PostgreSQL ✅
 Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md](../docs/refactor-plan.md). Cada etapa deixa o projeto funcionando e é commitável isoladamente.
 - [x] Etapa 0 — Spec atualizado para a arquitetura alvo
 - [x] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
@@ -823,7 +823,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
 - [x] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
 - [x] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
-- [ ] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
+- [x] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo

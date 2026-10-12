@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0 a 8 concluídas (o front já consome a API; login Google real ainda pendente de teste manual com credenciais). Falta a Etapa 9 (remover o Supabase).
+> Status: aprovado em 2026-10-12. **Plano concluído** (Etapas 0 a 9). Pendente fora do plano: teste manual do login com um Google real (precisa do client OAuth); deploy está no backlog.
 
 ## 0. Contexto
 
@@ -506,6 +506,12 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
   - reescrever o README (setup dev, seed, Google OAuth);
   - atualizar o princípio "RLS no banco".
 - **Concluído quando:** `grep -ri supabase apps/ infra/ *.md .mcp.json` não retorna nada relevante e o build passa.
+- **Executada.**
+  - **Removidos:** `@supabase/ssr` e `@supabase/supabase-js` (o lockfile ficou com 0 menções), `src/lib/supabase/`, `src/lib/share-token.ts`, `src/types/` (só tinha `database.ts`), `supabase/schema.sql` e o `.mcp.json` inteiro (a única entrada era o MCP do Supabase, então o arquivo não tinha mais razão de existir).
+  - **Ajustados:** a linha "Use supabase skill" saiu do `AGENTS.md`, e o comentário do `BoardAccess` deixou de citar o RLS do Supabase.
+  - **README reescrito** do zero (a versão anterior misturava o setup do Supabase com o novo): arquitetura, pré-requisitos, Postgres, OAuth, seed (dev e produção), variáveis de ambiente, fluxo do contrato da API e testes. O princípio "RLS no banco" virou "a API é a única porta de acesso ao banco".
+  - **Correção no setup:** o compose usa a porta 5432 por padrão, mas a API em dev espera a 5434, então o `cp .env.example .env` deixou de ser opcional no README.
+  - **Verificação:** o `grep` do critério só encontra o ponteiro histórico do README para este plano. `pnpm install --frozen-lockfile`, `typecheck`, `lint` e `build` passam, e o build lista só `/`, `/board`, `/board/[boardId]`, `/login` e `/share/[token]`.
 - **Verificação:** o grep, `pnpm build` e o smoke da Etapa 8.
 
 ### Paralelismo

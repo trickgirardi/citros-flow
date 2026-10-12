@@ -8,7 +8,7 @@ namespace Financas.Api.Features.Boards;
 public record BoardContext(Board Board, bool CanMutate);
 
 /// <summary>
-/// Autorização por board, no lugar do RLS do Supabase. Todo endpoint de board passa por aqui.
+/// Autorização por board: a API é a única porta de acesso ao banco, e todo endpoint de board passa por aqui.
 /// Um papel com board_id nulo é global e vale para todos os boards.
 /// </summary>
 public class BoardAccess(AppDbContext db)
