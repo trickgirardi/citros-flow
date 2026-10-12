@@ -5,3 +5,5 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+# gerado por `pnpm gen:api` (openapi-typescript); não formatar
+src/lib/api/schema.d.ts

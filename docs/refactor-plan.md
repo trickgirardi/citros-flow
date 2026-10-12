@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0 a 6 concluídas (a API está completa; login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 a 7 concluídas (a API está completa e o cliente TS gerado; login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
 
 ## 0. Contexto
 
@@ -425,6 +425,19 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
   - `src/lib/money.ts`.
 - **Concluído quando:** `pnpm gen:api && pnpm typecheck` passam e o app continua no Supabase.
 - **Verificação:** typecheck. Regenerar sem mudar a API produz `git diff` vazio.
+- **Executada.**
+  - **Instalados:** `openapi-fetch` 0.17.0 (dependência) e `openapi-typescript` 7.13.0 (dev). O `pnpm-lock.yaml` mudou além das duas linhas só porque o sufixo de peer dependency (`supports-color`) foi re-chaveado em `next`, `eslint` e `shadcn`; as versões não mudaram.
+  - **`pnpm gen:api`:** lê `../api/openapi/openapi.json` e escreve `src/lib/api/schema.d.ts`. Regenerar duas vezes dá o mesmo arquivo, e o `dotnet build` gera sempre o mesmo `openapi.json`. O arquivo gerado está no `.prettierignore` (o `format` reindentaria e sujaria o diff).
+  - **`src/lib/api-client.ts`:** `createApiClient()` é assíncrono, repassa o `Cookie` de `cookies()` e usa `cache: "no-store"`.
+  - **`src/lib/money.ts`:** `formatMoney`, `normalizeMoneyInput`, `toCents` e `fromCents`.
+    - `toCents` lê os dígitos da string, sem multiplicar float. A primeira versão errava `"1.005"` (100 em vez de 101, porque `1.005 * 100` vale 100.49999…), e foi pega pelo teste.
+    - `normalizeMoneyInput` aceita `"1.234,56"`, `"1234,56"` e `"10.5"`, e recusa negativo, lixo e separadores ambíguos como `"1,234,56"`.
+    - O front não tem runner de testes (não pedi uma dependência nova), então a verificação foi um script descartável com 40 asserções, inclusive a ida e volta de todos os centavos de 0,00 a 100,00.
+  - **Tipos provados:** um arquivo temporário (já removido) usou o cliente com os acertos e com 5 usos errados marcados `@ts-expect-error` (valor como número, `type` fora da união, rota inexistente, path sem parâmetros, `balance` como number). O `tsc` aceitou os certos e todos os errados acusaram erro.
+  - **Bug de contrato achado e corrigido na API:** o .NET publica todo inteiro como `["integer","string"]`, o que gerava `transactionCount: number | string`. O transformer agora publica `integer` puro (teste `Inteiros_sao_integer_puro...`, 201 testes passam).
+  - **Detalhes dos tipos gerados que a Etapa 8 vai encontrar:**
+    - Campos que a API aceita nulos viram `null | string` (`description`, `category`, `name`, `ids`).
+    - O arquivo do import vem como `IFormFile: string`. Para enviar o CSV é preciso um `bodySerializer` que monte o `FormData` e um cast no campo `file`.
 
 ### Etapa 8: Virada do front para a API
 - **Escopo:**
@@ -433,7 +446,8 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
     - `proxy.ts` checa o cookie `citros_session`;
     - `(app)/layout.tsx` usa `/api/me`;
     - o logout vira um form POST para `/api/auth/logout`;
-    - remover `forgot-password`, `reset-password`, `auth/confirm` e os forms correspondentes.
+    - remover `forgot-password`, `reset-password`, `auth/confirm` e os forms correspondentes;
+    - **renovação do cookie (achado na Etapa 7):** o cookie é deslizante (7 dias), mas a API só o renova num `Set-Cookie`, e o Next não repassa o `Set-Cookie` das chamadas server-side (Server Components não gravam cookies). Sem tratamento, a sessão cai 7 dias após o login mesmo com uso diário. Proposta: um componente cliente mínimo no layout `(app)` que faz `fetch("/api/me")` uma vez por carregamento de página (o browser recebe o `Set-Cookie` direto, pelo rewrite). Precisa de decisão antes da Etapa 8.
   - **Dados:**
     - as páginas `board/page.tsx`, `board/[boardId]/layout.tsx`, `board/[boardId]/page.tsx` e `share/[token]/page.tsx` passam a consumir a API;
     - as Server Actions chamam a API, mapeiam ProblemDetails para `{error}` e mantêm `revalidatePath`;

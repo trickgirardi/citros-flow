@@ -29,6 +29,22 @@ public class OpenApiContractTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Inteiros_sao_integer_puro_nao_integer_ou_string()
+    {
+        var schemas = (await Doc()).GetProperty("components").GetProperty("schemas");
+
+        foreach (var (schema, property) in new[]
+                 { ("MonthSummaryResponse", "transactionCount"), ("BulkCategoryResponse", "updatedCount"),
+                   ("ImportNubankResponse", "importedCount") })
+        {
+            var count = schemas.GetProperty(schema).GetProperty("properties").GetProperty(property);
+            Assert.Equal(JsonValueKind.String, count.GetProperty("type").ValueKind); // "integer", não ["integer","string"]
+            Assert.Equal("integer", count.GetProperty("type").GetString());
+            Assert.False(count.TryGetProperty("pattern", out _));
+        }
+    }
+
+    [Fact]
     public async Task Rotas_de_leitura_estao_no_contrato()
     {
         var paths = (await Doc()).GetProperty("paths");

@@ -814,7 +814,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
 - [x] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
 - [x] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
-- [ ] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
+- [x] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`
 - [ ] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
 - [ ] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
 
