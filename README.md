@@ -11,19 +11,21 @@
 
 ## Setup
 
-1. Copie `.env.example` para `.env.local` e preencha as chaves do Supabase.
+1. Crie `apps/web/.env.local` com as chaves do Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 2. No Supabase SQL Editor, execute `supabase/schema.sql`.
 3. Crie usuarios em `Authentication > Users` e vinculos em `user_roles`.
-4. Rode o projeto:
+4. Rode o projeto (o app Next fica em `apps/web`):
 
 ```bash
+cd apps/web
+pnpm install
 pnpm dev
 ```
 
 ## Gerar tipos oficiais do Supabase
 
-Quando seu projeto Supabase estiver configurado, gere/atualize `types/database.ts`:
+Quando seu projeto Supabase estiver configurado, gere/atualize `apps/web/src/types/database.ts` (rode a partir de `apps/web`):
 
 ```bash
-pnpm dlx supabase gen types typescript --project-id <PROJECT_ID> --schema public > types/database.ts
+pnpm dlx supabase gen types typescript --project-id <PROJECT_ID> --schema public > src/types/database.ts
 ```
