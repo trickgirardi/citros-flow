@@ -566,7 +566,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 3. Antes de criar a sessão, a API:
    - exige `email_verified = true` no retorno do Google;
    - normaliza o e-mail (trim + lower) e o procura em `users`, comparação case-insensitive, exigindo `is_active = true`.
-4. Falha na verificação ou usuário não encontrado: **nenhuma sessão é criada** e o usuário volta para `/login?error=unverified` ou `/login?error=not_allowed`.
+4. Falha na verificação ou usuário não encontrado: **nenhuma sessão é criada** e o usuário volta para `/login?error=unverified` (e-mail não verificado) ou `/login?error=not_allowed` (não cadastrado ou inativo, sem distinguir). Falha do próprio Google (consentimento negado, state inválido) volta com `/login?error=google_failed`.
 5. Sucesso: a API grava `last_login_at`, emite o cookie (com `sub = users.id`) e redireciona para o `returnUrl`.
 6. A cada request autenticado, a API revalida `users.is_active`. Usuário desativado perde a sessão no request seguinte.
 7. Logout: `POST /api/auth/logout`. Usuário atual: `GET /api/me`.
@@ -808,7 +808,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 1 — Limpeza de código morto (`next-themes`, `lib/supabase/admin.ts`, `client.ts`, `package-lock.json`)
 - [x] Etapa 2 — Reestruturar em monorepo (`apps/web/src`), criar `CLAUDE.md` com `@AGENTS.md`
 - [x] Etapa 3 — `docker-compose.dev.yml` (Postgres 18), esqueleto da API, schema e migration `Initial`, OpenAPI gerado no build
-- [ ] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
+- [x] Etapa 4 — Login Google, allowlist em `users`, cookie de sessão, `GET /api/me`, rewrite do Next para `/api`
 - [ ] Etapa 5 — Endpoints de leitura, `BoardAccess`, resumo do mês calculado na API
 - [ ] Etapa 6 — Endpoints de escrita, import Nubank, link de compartilhamento
 - [ ] Etapa 7 — Cliente TypeScript gerado (`pnpm gen:api`), `api-client.ts`, `money.ts`

@@ -1,5 +1,6 @@
 using Financas.Api.Common;
 using Financas.Api.Data;
+using Financas.Api.Features.Auth;
 using Financas.Api.Features.Health;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new DecimalStringConverter()));
 builder.Services.AddCitrosOpenApi();
+builder.Services.AddCitrosAuth(builder.Configuration);
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
@@ -32,6 +34,11 @@ if (!designTime && app.Configuration.GetValue<bool>("Database:MigrateOnStartup")
     await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
 }
 
+app.UsePublicOrigin();
+app.UseOriginCheck();
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapOpenApi("/api/openapi/{documentName}.json");
 if (app.Environment.IsDevelopment())
 {
@@ -40,6 +47,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapHealth();
+app.MapAuth();
 
 app.Run();
 

@@ -44,3 +44,6 @@ NU_672958359_01MAI2026_31MAI2026.csv
 [Oo]bj/
 *.user
 .vs/
+
+# Seed real (copiado de infra/postgres/seed.example.sql)
+infra/postgres/seed.sql

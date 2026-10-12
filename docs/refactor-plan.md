@@ -1,6 +1,6 @@
 # Plano de refatoração: Supabase → ASP.NET Core + PostgreSQL
 
-> Status: aprovado em 2026-10-12. Etapas 0, 1, 2 e 3 concluídas. Demais etapas não iniciadas.
+> Status: aprovado em 2026-10-12. Etapas 0 a 4 concluídas (login Google real ainda pendente de teste manual com credenciais). Demais etapas não iniciadas.
 
 ## 0. Contexto
 
@@ -341,6 +341,17 @@ Cada etapa termina com o projeto funcionando e pode ser commitada isoladamente. 
     - usuário inativo responde 401;
     - `returnUrl` malicioso é rejeitado;
   - teste manual com as credenciais OAuth de dev, seguindo o teste de aceite da 3.3.
+- **Executada.** 57 testes passam. Validado ponta a ponta pela porta 3000 (API + Next dev) com credenciais Google **falsas**: o `redirect_uri` enviado ao Google é exatamente `http://localhost:3000/api/auth/signin-google`, o cookie de correlação passa pelo rewrite (`SameSite=Lax`, sem `Domain`), `/api/me` sem sessão dá 401 sem virar redirect do proxy, `signin-google` com state inválido volta para `/login?error=google_failed` e o check de `Origin` funciona através do rewrite.
+  - **Pendente (precisa de você):** login com um Google real (client OAuth + usuário no seed), conferindo que `citros_session` aparece em `localhost:3000` e que `/api/me` responde 200.
+  - **Decisões de implementação:**
+    - A sessão usa `ClaimTypes.NameIdentifier` para o id (em vez de um claim literal `sub`). Só id, e-mail e nome vão para o cookie; nada vindo do Google.
+    - O Google só é registrado se houver `Google:ClientId` e `Google:ClientSecret`. Sem eles, `/api/auth/login` responde 503 e o resto da API continua de pé (o handler validaria as opções em todo request e derrubaria tudo).
+    - `returnUrl` inválido não gera erro: cai no padrão `/board`.
+    - Novo código de erro `google_failed` (além de `unverified` e `not_allowed`): **a tela de login da Etapa 8 precisa tratar os três**.
+    - O logout responde 302 para `/login` (pensado para o form POST do front).
+    - `is_active` é revalidado a cada request com cookie (1 query).
+    - O seed usa `ON CONFLICT DO UPDATE`, então rodar de novo também ajusta nomes e papéis.
+    - Entrou `Microsoft.AspNetCore.Authentication.Google` 10.0.12 e `user-secrets` (`UserSecretsId` no csproj).
 
 ### Etapa 5: Endpoints de leitura e autorização
 - **Escopo:**

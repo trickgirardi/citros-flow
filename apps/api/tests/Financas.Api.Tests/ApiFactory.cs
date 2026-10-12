@@ -3,13 +3,23 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financas.Api.Tests;
 
-/// <summary>API real apontando para o Postgres do Testcontainers, com migrations aplicadas no startup.</summary>
-public class ApiFactory(string connectionString) : WebApplicationFactory<Program>
+/// <summary>API real apontando para o Postgres do Testcontainers, com Google "configurado" e /test/signin.</summary>
+public class ApiFactory(string connectionString, Dictionary<string, string?>? settings = null)
+    : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", connectionString);
         builder.UseSetting("Database:MigrateOnStartup", "true");
+        builder.UseSetting("Google:ClientId", "test-client-id");
+        builder.UseSetting("Google:ClientSecret", "test-client-secret");
+        foreach (var (key, value) in settings ?? [])
+            builder.UseSetting(key, value);
+
+        builder.ConfigureServices(services => services.AddSingleton<IStartupFilter, TestSignInStartupFilter>());
     }
+
+    public HttpClient CreateNoRedirectClient() =>
+        CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 }
