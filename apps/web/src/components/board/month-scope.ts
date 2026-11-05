@@ -16,6 +16,7 @@ const currentMonthFormatter = new Intl.DateTimeFormat("en-CA", {
 export type MonthScope = {
   endDate: string;
   label: string;
+  lastDate: string;
   monthKey: string;
   nextMonthKey: string;
   previousMonthKey: string;
@@ -30,6 +31,8 @@ export function getMonthScope(monthKey: string | null | undefined): MonthScope {
   return {
     endDate: `${nextMonthKey}-01`,
     label: formatMonthLabel(safeMonthKey),
+    // Último dia do mês (inclusivo): Date.UTC com dia 0 do mês seguinte.
+    lastDate: `${safeMonthKey}-${String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, "0")}`,
     monthKey: safeMonthKey,
     nextMonthKey,
     previousMonthKey: shiftMonthKey(safeMonthKey, -1),

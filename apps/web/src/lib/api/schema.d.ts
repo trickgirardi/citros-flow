@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{boardId}/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPeriodSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boards/{boardId}/suggestions": {
         parameters: {
             query?: never;
@@ -318,6 +334,26 @@ export interface components {
         };
         MonthSummaryResponse: {
             month: string;
+            /** Format: decimal */
+            previousBalance: string;
+            /** Format: decimal */
+            entradasTotal: string;
+            /** Format: decimal */
+            saidasTotal: string;
+            /** Format: decimal */
+            balance: string;
+            /** Format: decimal */
+            reservesTotal: string;
+            /** Format: int32 */
+            transactionCount: number;
+            entradas: components["schemas"]["CategoryGroupDto"][];
+            saidas: components["schemas"]["CategoryGroupDto"][];
+        };
+        PeriodSummaryResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
             /** Format: decimal */
             previousBalance: string;
             /** Format: decimal */
@@ -948,6 +984,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthSummaryResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetPeriodSummary: {
+        parameters: {
+            query?: {
+                start?: string;
+                end?: string;
+            };
+            header?: never;
+            path: {
+                boardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodSummaryResponse"];
                 };
             };
             /** @description Bad Request */

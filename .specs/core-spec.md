@@ -181,6 +181,7 @@ Regras:
 - Entradas, saídas e fechamento sempre usam apenas transações do período selecionado
 - Saldo final do mês selecionado considera o saldo acumulado até o mês anterior
 - Fórmula: `saldoFinal = saldoAnterior + entradasDoMes - saidasDoMes`
+- Exceção: a **imagem de fechamento** (seção 7.10) pode usar um período customizado `[início, fim]` (datas inclusivas), porque as contas de um mês costumam ser pagas nos primeiros dias do mês seguinte. O dashboard continua sempre mensal.
 
 ### 4.5 UserRole (Permissão)
 Vincula usuário a um board com um nível de acesso.
@@ -529,21 +530,32 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Objetivo: gerar arquivo de imagem (`.png`) com resumo mensal para compartilhamento externo
 - Geração acontece no browser; não cria registro no banco e não exige dependência nova
 - Botão fica no painel de Fechamento como ação operacional
-- Antes de gerar a imagem, abrir modal com campos temporários:
+- Antes de gerar a imagem, abrir modal com:
+  - **período do fechamento**: data de início e data de fim (ambas inclusivas), pré-preenchidas com o primeiro e o último dia do mês selecionado
   - entrada extra opcional: categoria + valor
   - saída extra opcional: categoria + valor
+- **Por que período customizado:** as contas de um mês costumam ser pagas entre o dia 1 e o dia 5 do mês seguinte (dia 1, ou 2, 3 ou 4 quando há feriado). O fechamento real do mês precisa poder terminar nesse dia de pagamento (ex.: 02/10 a 01/11).
+- Ao gerar, o modal busca o resumo do período na API (`GET /api/boards/{boardId}/periods?start=yyyy-MM-dd&end=yyyy-MM-dd`, ver abaixo). Entradas, saídas, saldo anterior e total de reservas vêm da API; o front só soma os ajustes temporários, em centavos.
+- **Saldo anterior do período** = soma com sinal de todas as transações com data anterior ao início. Assim, se o período seguinte começa no dia seguinte ao fim do anterior, os saldos encadeiam.
 - Valores temporários entram apenas no cálculo/arte do fechamento gerado
 - Valores temporários não são salvos no DB e não alteram o dashboard
 - Entrada extra soma nas entradas; saída extra soma nas saídas
 - Imagem deve conter:
-  - cabeçalho: `Fluxo de caixa`, nome do board, mês/ano
+  - cabeçalho: `Fluxo de caixa`, nome do board, mês/ano; quando o período não é o mês inteiro, o subtítulo mostra também o período (`Outubro de 2026 (02/10/2026 a 01/11/2026)`)
   - lado esquerdo: entradas por categoria
   - lado direito: saídas por categoria, incluindo ajustes temporários
   - rodapé/resumo: saldo anterior, entradas, saídas, saldo final, total de reservas financeiras (informativo)
 - O saldo final da imagem usa: `saldo anterior + entradas ajustadas - saídas ajustadas`
 - Total de reservas financeiras aparece logo abaixo do saldo final e não entra na fórmula do saldo final
 - Categorias repetidas devem ser agregadas antes de desenhar a imagem
-- O arquivo gerado deve ser baixado com nome legível contendo board e mês
+- O arquivo gerado deve ser baixado com nome legível contendo board e período
+
+**Endpoint `GET /api/boards/{boardId}/periods?start=yyyy-MM-dd&end=yyyy-MM-dd`:**
+- Mesmo acesso do resumo mensal (qualquer papel que enxerga o board; board inacessível = 404)
+- `start` e `end` são datas inclusivas no formato exato `yyyy-MM-dd`; a API consulta `date >= start` e `date < end + 1 dia`
+- 400 (ProblemDetails com `title` legível) se: formato inválido, `end < start` ou período maior que 366 dias
+- Resposta: `start`, `end`, `previousBalance`, `entradasTotal`, `saidasTotal`, `balance`, `reservesTotal`, `transactionCount`, `entradas`, `saidas` (mesmos grupos por categoria do resumo mensal)
+- O resumo mensal (`/months/{month}`) não muda; os dois compartilham a mesma consulta
 
 ### 7.11 Reservas Financeiras
 - Objetivo: registrar valores guardados pelo board (dinheiro, caixinha, investimentos) fora do fluxo de caixa operacional
@@ -770,6 +782,9 @@ chore: atualiza dependências
 - [x] Gerar PNG client-side com cabeçalho, colunas e resumo final
 - [x] Baixar imagem com nome legível
 - [x] Não persistir valores temporários no DB
+- [x] API: `GET /api/boards/{boardId}/periods` (início/fim inclusivos, saldo anterior = tudo antes do início, 400 para período inválido ou > 366 dias) com testes
+- [x] Modal: campos de início e fim (padrão = mês selecionado), buscar resumo do período na API e gerar a imagem com ele
+- [x] Imagem: subtítulo e nome do arquivo mostram o período quando não é o mês inteiro
 
 ### Fase 12 — Link Público View-Only
 - [x] Criar tabela `board_share_links` com `token_hash`, `revoked_at` e `expires_at`

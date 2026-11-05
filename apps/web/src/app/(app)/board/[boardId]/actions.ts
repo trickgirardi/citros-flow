@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createApiClient } from "@/lib/api-client";
 import { callApi } from "@/lib/api-result";
 import { normalizeMoneyInput } from "@/lib/money";
+import type { components } from "@/lib/api/schema";
 
 // Todas as escritas vão para a API, que valida, autoriza (404/403) e grava. Aqui só se lê o
 // formulário, se normaliza o valor ("1.234,56" -> "1234.56") e se traduz a resposta em texto de tela.
@@ -28,6 +29,10 @@ export type CreateShareLinkState = TransactionFormState & {
 export type ImportNubankCsvState = TransactionFormState & {
   importedCount: number;
 };
+
+export type ClosingPeriodResult =
+  | { error: string; summary: null }
+  | { error: null; summary: components["schemas"]["PeriodSummaryResponse"] };
 
 export type FinancialReserveFormState = TransactionFormState;
 export type DeleteFinancialReserveState = TransactionFormState;
@@ -317,6 +322,28 @@ export async function createShareLink(
   }
 
   return { ...SUCCESS, url: `${origin}/share/${data.token}` };
+}
+
+/** Resumo de um período (datas inclusivas yyyy-MM-dd) para a imagem de fechamento. A API valida e autoriza. */
+export async function getClosingPeriod(
+  boardId: string,
+  start: string,
+  end: string
+): Promise<ClosingPeriodResult> {
+  const fallback = "Nao foi possivel carregar o periodo.";
+  const api = await createApiClient();
+  const { data, error } = await callApi(
+    api.GET("/api/boards/{boardId}/periods", {
+      params: { path: { boardId }, query: { start, end } },
+    }),
+    fallback
+  );
+
+  if (error || !data) {
+    return { error: error ?? fallback, summary: null };
+  }
+
+  return { error: null, summary: data };
 }
 
 export async function createFinancialReserve(

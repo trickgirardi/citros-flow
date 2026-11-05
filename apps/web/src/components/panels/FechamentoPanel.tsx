@@ -1,4 +1,4 @@
-import type { FinancialReserve, TransactionGroup } from "@/components/panels/dashboard-data"
+import type { FinancialReserve } from "@/components/panels/dashboard-data"
 import { FinancialReservesModal } from "@/components/board/FinancialReservesModal"
 import { ImportNubankCsvModal } from "@/components/board/ImportNubankCsvModal"
 import { MonthlyClosingImageModal } from "@/components/board/MonthlyClosingImageModal"
@@ -14,13 +14,13 @@ type FechamentoPanelProps = {
   canMutate: boolean
   categorySuggestions: string[]
   descriptionSuggestions: string[]
-  entradaGroups: TransactionGroup[]
   entradasTotal: string
   monthLabel: string
+  periodEnd: string
+  periodStart: string
   previousBalance: string
   reserves: FinancialReserve[]
   reservasTotal: string
-  saidaGroups: TransactionGroup[]
   saidasTotal: string
   transactionCount: number
 }
@@ -32,13 +32,13 @@ export function FechamentoPanel({
   canMutate,
   categorySuggestions,
   descriptionSuggestions,
-  entradaGroups,
   entradasTotal,
   monthLabel,
+  periodEnd,
+  periodStart,
   previousBalance,
   reserves,
   reservasTotal,
-  saidaGroups,
   saidasTotal,
   transactionCount,
 }: FechamentoPanelProps) {
@@ -90,14 +90,13 @@ export function FechamentoPanel({
 
       {canMutate ? (
         <div className="mt-auto grid gap-2 border-t p-3">
-          {/* A imagem soma ajustes temporários: recebe centavos inteiros, sem float. */}
+          {/* A imagem busca o resumo do período na API; o período padrão é o mês exibido. */}
           <MonthlyClosingImageModal
+            boardId={boardId}
             boardName={boardName}
-            entradas={toClosingCategories(entradaGroups)}
             monthLabel={monthLabel}
-            previousBalance={toCents(previousBalance)}
-            reservasTotal={toCents(reservasTotal)}
-            saidas={toClosingCategories(saidaGroups)}
+            periodEnd={periodEnd}
+            periodStart={periodStart}
           />
           <>
             <TransactionModal
@@ -121,11 +120,4 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   )
-}
-
-function toClosingCategories(groups: TransactionGroup[]) {
-  return groups.map((group) => ({
-    category: group.category,
-    total: toCents(group.total),
-  }))
 }

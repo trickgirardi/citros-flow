@@ -33,6 +33,22 @@ public static class TransacoesEndpoints
             .WithName("GetMonthSummary")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
+        group.MapGet("/periods",
+                async Task<Results<Ok<PeriodSummaryResponse>, NotFound, ProblemHttpResult>> (
+                    Guid boardId, string? start, string? end, ClaimsPrincipal user,
+                    BoardAccess access, AppDbContext db, CancellationToken ct) =>
+                {
+                    if (!PeriodRange.TryParse(start, end, out var period, out var error))
+                        return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: error);
+
+                    if (await access.GetAsync(user.GetUserId()!.Value, boardId, ct) is null)
+                        return TypedResults.NotFound();
+
+                    return TypedResults.Ok(await MonthSummaryQuery.BuildAsync(db, boardId, period, ct));
+                })
+            .WithName("GetPeriodSummary")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         group.MapGet("/suggestions",
                 async Task<Results<Ok<SuggestionsResponse>, NotFound>> (
                     Guid boardId, ClaimsPrincipal user, BoardAccess access, AppDbContext db, CancellationToken ct) =>

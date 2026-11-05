@@ -78,13 +78,13 @@ export default async function ShareBoardPage({
           canMutate={false}
           categorySuggestions={[]}
           descriptionSuggestions={[]}
-          entradaGroups={summary.entradas}
           entradasTotal={summary.entradasTotal}
           monthLabel={monthScope.label}
+          periodEnd={monthScope.lastDate}
+          periodStart={monthScope.startDate}
           previousBalance={summary.previousBalance}
           reserves={[]}
           reservasTotal={summary.reservesTotal}
-          saidaGroups={summary.saidas}
           saidasTotal={summary.saidasTotal}
           transactionCount={summary.transactionCount}
         />

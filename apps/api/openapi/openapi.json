@@ -701,6 +701,64 @@
         }
       }
     },
+    "/api/boards/{boardId}/periods": {
+      "get": {
+        "tags": [
+          "Transacoes"
+        ],
+        "operationId": "GetPeriodSummary",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodSummaryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/boards/{boardId}/suggestions": {
       "get": {
         "tags": [
@@ -1102,6 +1160,72 @@
         "properties": {
           "month": {
             "type": "string"
+          },
+          "previousBalance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "entradasTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "saidasTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "balance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "reservesTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "entradas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryGroupDto"
+            }
+          },
+          "saidas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryGroupDto"
+            }
+          }
+        }
+      },
+      "PeriodSummaryResponse": {
+        "required": [
+          "start",
+          "end",
+          "previousBalance",
+          "entradasTotal",
+          "saidasTotal",
+          "balance",
+          "reservesTotal",
+          "transactionCount",
+          "entradas",
+          "saidas"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
           },
           "previousBalance": {
             "pattern": "^-?\\d+(\\.\\d+)?$",

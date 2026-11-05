@@ -16,6 +16,7 @@ public class OpenApiContractTests(PostgresFixture postgres)
         // type como string simples (não ["null","string"]): o cliente TS gerado precisa de `string`, não `string | null`.
         foreach (var (schema, property) in new[]
                  { ("MonthSummaryResponse", "balance"), ("MonthSummaryResponse", "previousBalance"),
+                   ("PeriodSummaryResponse", "balance"), ("PeriodSummaryResponse", "previousBalance"),
                    ("TransactionDto", "amount"), ("CategoryGroupDto", "total"), ("ReserveDto", "amount") })
         {
             var money = schemas.GetProperty(schema).GetProperty("properties").GetProperty(property);
@@ -51,7 +52,7 @@ public class OpenApiContractTests(PostgresFixture postgres)
 
         foreach (var path in new[]
                  { "/api/boards", "/api/boards/{boardId}", "/api/boards/{boardId}/months/{month}",
-                   "/api/boards/{boardId}/suggestions", "/api/boards/{boardId}/reserves" })
+                   "/api/boards/{boardId}/periods", "/api/boards/{boardId}/suggestions", "/api/boards/{boardId}/reserves" })
             Assert.True(paths.TryGetProperty(path, out _), path);
 
         var months = paths.GetProperty("/api/boards/{boardId}/months/{month}").GetProperty("get").GetProperty("responses");

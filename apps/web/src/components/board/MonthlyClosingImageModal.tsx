@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { ImageDown } from "lucide-react"
 
+import { getClosingPeriod } from "@/app/(app)/board/[boardId]/actions"
+import type { TransactionGroup } from "@/components/panels/dashboard-data"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -20,13 +22,13 @@ export type ClosingCategorySummary = {
   total: number
 }
 
+// periodStart/periodEnd (yyyy-MM-dd, inclusivos) são o período padrão: o mês exibido no dashboard.
 type MonthlyClosingImageModalProps = {
+  boardId: string
   boardName: string
-  entradas: ClosingCategorySummary[]
   monthLabel: string
-  previousBalance: number
-  reservasTotal: number
-  saidas: ClosingCategorySummary[]
+  periodEnd: string
+  periodStart: string
 }
 
 type TemporaryCategoryValue = {
@@ -35,17 +37,31 @@ type TemporaryCategoryValue = {
 }
 
 export function MonthlyClosingImageModal({
+  boardId,
   boardName,
-  entradas,
   monthLabel,
-  previousBalance,
-  reservasTotal,
-  saidas,
+  periodEnd,
+  periodStart,
 }: MonthlyClosingImageModalProps) {
   const [error, setError] = useState<string | null>(null)
+  const [isPending, setIsPending] = useState(false)
 
-  function handleSubmit(formData: FormData) {
+  async function handleSubmit(formData: FormData) {
     setError(null)
+
+    const start = formData.get("periodStart")?.toString() ?? ""
+    const end = formData.get("periodEnd")?.toString() ?? ""
+
+    if (!start || !end) {
+      setError("Informe a data de inicio e a data de fim.")
+      return
+    }
+
+    // yyyy-MM-dd compara certo como texto.
+    if (end < start) {
+      setError("A data de fim nao pode ser anterior a data de inicio.")
+      return
+    }
 
     const extraEntrada = parseOptionalCategoryValue(
       formData,
@@ -63,26 +79,45 @@ export function MonthlyClosingImageModal({
       return
     }
 
+    // Entradas, saídas, saldo anterior e reservas do período vêm da API; aqui só entram os ajustes.
+    setIsPending(true)
+    let result: Awaited<ReturnType<typeof getClosingPeriod>>
+    try {
+      result = await getClosingPeriod(boardId, start, end)
+    } finally {
+      setIsPending(false)
+    }
+
+    if (result.summary === null) {
+      setError(result.error)
+      return
+    }
+
+    const { summary } = result
+    const previousBalance = toCents(summary.previousBalance)
     const adjustedEntradas = aggregateCategories(
-      entradas,
+      toClosingCategories(summary.entradas),
       extraEntrada.value ? [extraEntrada.value] : []
     )
     const adjustedSaidas = aggregateCategories(
-      saidas,
+      toClosingCategories(summary.saidas),
       extraSaida.value ? [extraSaida.value] : []
     )
     const entradasTotal = sumCategories(adjustedEntradas)
     const saidasTotal = sumCategories(adjustedSaidas)
     const finalBalance = previousBalance + entradasTotal - saidasTotal
+    const isWholeMonth = start === periodStart && end === periodEnd
 
     downloadClosingImage({
       boardName,
       entradas: adjustedEntradas,
       entradasTotal,
       finalBalance,
-      monthLabel,
+      periodLabel: isWholeMonth
+        ? capitalize(monthLabel)
+        : `${capitalize(monthLabel)} (${formatDate(start)} a ${formatDate(end)})`,
       previousBalance,
-      reservasTotal,
+      reservasTotal: toCents(summary.reservesTotal),
       saidas: adjustedSaidas,
       saidasTotal,
     })
@@ -100,12 +135,42 @@ export function MonthlyClosingImageModal({
         <DialogHeader>
           <DialogTitle>Gerar fechamento</DialogTitle>
           <DialogDescription>
-            Inclua valores temporarios que pertencem ao mes, mas nao estao no
-            dashboard.
+            Escolha o periodo do fechamento e inclua valores temporarios que
+            pertencem a ele, mas nao estao no dashboard.
           </DialogDescription>
         </DialogHeader>
 
         <form action={handleSubmit} className="grid gap-4">
+          <div className="grid gap-3 rounded-md border p-3">
+            <p className="text-xs font-medium">Periodo do fechamento</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                Inicio
+                <input
+                  name="periodStart"
+                  type="date"
+                  required
+                  defaultValue={periodStart}
+                  className="h-9 rounded-md border bg-background px-3 text-sm text-foreground"
+                />
+              </label>
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                Fim (inclusive)
+                <input
+                  name="periodEnd"
+                  type="date"
+                  required
+                  defaultValue={periodEnd}
+                  className="h-9 rounded-md border bg-background px-3 text-sm text-foreground"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Para incluir contas pagas no inicio do mes seguinte, termine no
+              dia do pagamento.
+            </p>
+          </div>
+
           <div className="grid gap-3 rounded-md border p-3">
             <p className="text-xs font-medium">Entrada extra</p>
             <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
@@ -153,7 +218,9 @@ export function MonthlyClosingImageModal({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <div className="flex justify-end">
-            <Button type="submit">Baixar imagem</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Gerando..." : "Baixar imagem"}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -194,6 +261,18 @@ function parseAmount(value: string | undefined) {
   return normalized === null ? -1 : toCents(normalized)
 }
 
+function toClosingCategories(groups: TransactionGroup[]): ClosingCategorySummary[] {
+  return groups.map((group) => ({
+    category: group.category,
+    total: toCents(group.total),
+  }))
+}
+
+/** yyyy-MM-dd -> dd/MM/yyyy, sem passar por Date (sem efeito de fuso). */
+function formatDate(value: string) {
+  return value.split("-").reverse().join("/")
+}
+
 function aggregateCategories(
   baseCategories: ClosingCategorySummary[],
   temporaryCategories: TemporaryCategoryValue[]
@@ -226,7 +305,7 @@ function downloadClosingImage({
   entradas,
   entradasTotal,
   finalBalance,
-  monthLabel,
+  periodLabel,
   previousBalance,
   reservasTotal,
   saidas,
@@ -236,7 +315,7 @@ function downloadClosingImage({
   entradas: ClosingCategorySummary[]
   entradasTotal: number
   finalBalance: number
-  monthLabel: string
+  periodLabel: string
   previousBalance: number
   reservasTotal: number
   saidas: ClosingCategorySummary[]
@@ -280,7 +359,7 @@ function downloadClosingImage({
   )
   drawText(
     context,
-    capitalize(monthLabel),
+    periodLabel,
     width / 2,
     198,
     "26px Arial",
@@ -337,7 +416,7 @@ function downloadClosingImage({
     const url = URL.createObjectURL(blob)
 
     link.href = url
-    link.download = `fechamento-${slugify(boardName)}-${slugify(monthLabel)}.png`
+    link.download = `fechamento-${slugify(boardName)}-${slugify(periodLabel)}.png`
     link.click()
     URL.revokeObjectURL(url)
   }, "image/png")

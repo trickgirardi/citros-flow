@@ -37,6 +37,24 @@ public record MonthSummaryResponse(
     List<CategoryGroupDto> Entradas,
     List<CategoryGroupDto> Saidas);
 
+/// <summary>Mesmo conteúdo do resumo mensal para um período customizado.</summary>
+/// <param name="Start">Primeiro dia do período (inclusivo, yyyy-MM-dd).</param>
+/// <param name="End">Último dia do período (inclusivo, yyyy-MM-dd).</param>
+/// <param name="PreviousBalance">Saldo acumulado de tudo antes de Start.</param>
+/// <param name="Balance">PreviousBalance + EntradasTotal - SaidasTotal. As reservas não entram.</param>
+/// <param name="ReservesTotal">Total das reservas financeiras do board (informativo, sem filtro por período).</param>
+public record PeriodSummaryResponse(
+    DateOnly Start,
+    DateOnly End,
+    decimal PreviousBalance,
+    decimal EntradasTotal,
+    decimal SaidasTotal,
+    decimal Balance,
+    decimal ReservesTotal,
+    int TransactionCount,
+    List<CategoryGroupDto> Entradas,
+    List<CategoryGroupDto> Saidas);
+
 public record SuggestionsResponse(List<string> Categories, List<string> Descriptions);
 
 public static class TransactionMapping
