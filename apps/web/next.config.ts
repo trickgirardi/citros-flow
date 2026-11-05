@@ -5,6 +5,8 @@ import type { NextConfig } from "next"
 const apiInternalUrl = process.env.API_INTERNAL_URL ?? "http://localhost:5080"
 
 const nextConfig: NextConfig = {
+  // Imagem Docker enxuta (server.js + só o necessário de node_modules).
+  output: "standalone",
   async rewrites() {
     return [
       {
