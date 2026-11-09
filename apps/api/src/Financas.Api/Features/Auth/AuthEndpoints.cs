@@ -26,6 +26,8 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status302Found)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
+        group.MapPasswordLogin();
+
         group.MapPost("/auth/logout", async (HttpContext context) =>
             {
                 await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

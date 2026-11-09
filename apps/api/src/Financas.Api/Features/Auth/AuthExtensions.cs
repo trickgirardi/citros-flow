@@ -1,7 +1,10 @@
+using Financas.Api.Data.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financas.Api.Features.Auth;
 
@@ -45,6 +48,11 @@ public static class AuthExtensions
                 options.Events.OnRemoteFailure = GoogleSignIn.OnRemoteFailureAsync;
             });
         }
+
+        // Login por senha: hash do ASP.NET e limite de tentativas em memória (uma réplica da API).
+        services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<LoginThrottle>();
 
         services.AddAuthorization();
         return services;

@@ -162,6 +162,29 @@
         }
       }
     },
+    "/api/auth/password-login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "PasswordLogin",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordLoginForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "302": {
+            "description": "Found"
+          }
+        }
+      }
+    },
     "/api/auth/logout": {
       "post": {
         "tags": [
@@ -1201,6 +1224,34 @@
             "items": {
               "$ref": "#/components/schemas/CategoryGroupDto"
             }
+          }
+        }
+      },
+      "PasswordLoginForm": {
+        "required": [
+          "email",
+          "password",
+          "returnUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "returnUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

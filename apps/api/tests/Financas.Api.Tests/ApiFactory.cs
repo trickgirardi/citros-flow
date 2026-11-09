@@ -22,10 +22,14 @@ public class ApiFactory(
         builder.ConfigureServices(services =>
         {
             services.AddSingleton<IStartupFilter, TestSignInStartupFilter>();
-            // Relógio do cookie de sessão (expiração e renovação) controlável pelo teste.
+            // Relógio do cookie de sessão (expiração e renovação) e do limite de tentativas do login
+            // por senha, controlável pelo teste.
             if (clock is not null)
+            {
+                services.AddSingleton(clock);
                 services.PostConfigure<CookieAuthenticationOptions>(
                     CookieAuthenticationDefaults.AuthenticationScheme, o => o.TimeProvider = clock);
+            }
         });
     }
 

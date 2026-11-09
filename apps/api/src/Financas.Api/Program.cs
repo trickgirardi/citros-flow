@@ -46,6 +46,13 @@ if (!designTime && app.Configuration.GetValue<bool>("Database:MigrateOnStartup")
     await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
 }
 
+// Comando de operação: `set-password <email>` grava o hash da senha e sai, sem subir o servidor.
+if (!designTime && args is ["set-password", var email])
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    return await SetPasswordCommand.RunAsync(scope.ServiceProvider, email);
+}
+
 app.UsePublicOrigin();
 app.UseOriginCheck();
 app.UseAuthentication();
@@ -66,5 +73,6 @@ app.MapReservas();
 app.MapCompartilhamento();
 
 app.Run();
+return 0;
 
 public partial class Program;

@@ -8,6 +8,8 @@ public class User
     public string Email { get; set; } = "";
     public string? DisplayName { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>Hash do PasswordHasher do ASP.NET. Null = sem login por senha (só Google). Nunca a senha.</summary>
+    public string? PasswordHash { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
 }

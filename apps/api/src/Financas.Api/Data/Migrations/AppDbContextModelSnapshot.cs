@@ -290,6 +290,10 @@ namespace Financas.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_login_at");
 
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
+
                     b.HasKey("Id")
                         .HasName("pk_users");
 

@@ -22,7 +22,7 @@ Browser ──> Next.js (apps/web, :3000)
 - **API** (`apps/api`): ASP.NET Core (.NET 10, Minimal APIs por feature), EF Core + Npgsql, migrations em `Data/Migrations`. Faz o login (Google), a sessão (cookie HttpOnly), a autorização por papel e todos os cálculos financeiros.
 - **Banco**: PostgreSQL 18, via `docker-compose.dev.yml`.
 - **Mesmo origin**: o browser só fala com o Next. Em dev o Next encaminha `/api/*` para a API (`rewrites` em `apps/web/next.config.ts`), então não há CORS nem token no front.
-- **Login**: só Google, e só para e-mails já cadastrados (tabela `users`). Não há auto-cadastro.
+- **Login**: Google ou e-mail + senha, e só para e-mails já cadastrados (tabela `users`). Não há auto-cadastro.
 
 ```
 ├── apps/
@@ -85,6 +85,13 @@ Escreva os e-mails em **minúsculas**. O script é idempotente (pode rodar de no
 
 - Dev: `docker compose -f docker-compose.dev.yml exec -T postgres psql -U citros -d citros -v ON_ERROR_STOP=1 < infra/postgres/seed.sql`
 - Produção: suba a API uma vez para aplicar as migrations (ou rode `dotnet ef database update` com a connection string de produção) e então `psql "<connection string>" -v ON_ERROR_STOP=1 -f infra/postgres/seed.sql`
+
+**Login com senha (sem Google).** Quem tem senha definida pode entrar pelo formulário de `/login`; quem não tem continua só com o Google. A senha é definida por um comando da API (não há tela), e o e-mail precisa já existir em `users` (rode o seed antes). Mínimo de 12 caracteres, digitada duas vezes e sem eco:
+
+- Dev: `cd apps/api && dotnet run --project src/Financas.Api -- set-password admin@exemplo.org`
+- Produção (terminal do container da API no Dokploy): `dotnet Financas.Api.dll set-password admin@exemplo.org`
+
+Só o hash vai para o banco. Depois de 5 senhas erradas para um e-mail, ele fica bloqueado por 15 minutos.
 
 Para desativar alguém (derruba a sessão no request seguinte): `update users set is_active = false where email = '...';`
 

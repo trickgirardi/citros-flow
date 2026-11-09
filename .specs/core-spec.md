@@ -1,6 +1,6 @@
 # 🍋 SPEC — Citros Flow
 
-> **Estado do documento:** este spec descreve a arquitetura **atual**: Next.js + API ASP.NET Core + PostgreSQL, com login Google. O projeto nasceu sobre o Supabase e migrou em etapas, conforme [docs/refactor-plan.md](../docs/refactor-plan.md) (concluída). As Fases 1–13 do roadmap abaixo são histórico e citam o Supabase por isso; as funcionalidades que elas entregaram continuam valendo.
+> **Estado do documento:** este spec descreve a arquitetura **atual**: Next.js + API ASP.NET Core + PostgreSQL, com login Google e login por senha. O projeto nasceu sobre o Supabase e migrou em etapas, conforme [docs/refactor-plan.md](../docs/refactor-plan.md) (concluída). As Fases 1–13 do roadmap abaixo são histórico e citam o Supabase por isso; as funcionalidades que elas entregaram continuam valendo.
 
 ---
 
@@ -28,7 +28,7 @@
 | Backend | ASP.NET Core Web API (Minimal APIs por feature) | .NET 10 LTS |
 | ORM e migrations | EF Core + Npgsql (`EFCore.NamingConventions`, snake_case) | 10.x |
 | Banco de Dados | PostgreSQL (Docker Compose) | 18 |
-| Autenticação | Login Google (OAuth) no backend, com cookie de sessão | — |
+| Autenticação | Login Google (OAuth) e login por e-mail + senha no backend, com cookie de sessão | — |
 | Contrato da API | OpenAPI (`Microsoft.AspNetCore.OpenApi`) + `openapi-typescript` / `openapi-fetch` | — |
 | Docs da API (dev) | Scalar (`Scalar.AspNetCore`), só em Development | 2.x |
 | Testes (backend) | xUnit + Testcontainers (PostgreSQL) | — |
@@ -52,7 +52,7 @@ citros-flow/
 │   ├── web/                              # Next.js
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   ├── (auth)/login/page.tsx # Botão "Entrar com Google" + mensagens de erro
+│   │   │   │   ├── (auth)/login/page.tsx # Formulário e-mail/senha, botão "Entrar com Google" + mensagens de erro
 │   │   │   │   ├── (app)/
 │   │   │   │   │   ├── layout.tsx        # Layout protegido (valida sessão via GET /api/me)
 │   │   │   │   │   └── board/
@@ -249,6 +249,7 @@ type User = {
   email: string          // normalizado: trim + lower; único case-insensitive
   display_name: string | null
   is_active: boolean     // false = login negado e sessão derrubada no request seguinte
+  password_hash: string | null  // hash PBKDF2 (PasswordHasher); null = só entra pelo Google
   created_at: string
   last_login_at: string | null
 }
@@ -276,6 +277,7 @@ create table users (
   email text not null unique,          -- sempre gravado normalizado (trim + lower)
   display_name text,
   is_active boolean not null default true,
+  password_hash text,                  -- null = sem login por senha; nunca a senha em texto
   created_at timestamptz not null default now(),
   last_login_at timestamptz,
   constraint ck_users_email_normalized check (email = lower(btrim(email)))
@@ -571,7 +573,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 
 ## 8. Autenticação
 
-- Provider único: **Google** (OAuth), implementado no backend ASP.NET Core. Não há login por e-mail e senha, nem recuperação de senha.
+- Dois jeitos de entrar, ambos no backend ASP.NET Core e ambos terminando no mesmo cookie de sessão: **Google** (OAuth) e **e-mail + senha**. Não há recuperação de senha nem tela para trocar senha: a senha é definida por comando (ver abaixo).
 - A sessão é um cookie `citros_session`: HttpOnly, `SameSite=Lax`, `Secure` conforme o request, válido por 7 dias. Ele só é **reemitido (Set-Cookie) quando faltam menos de 2 dias** para vencer; fora dessa janela a API não manda Set-Cookie. O sliding padrão do ASP.NET (renova após metade da validade) fica desligado.
 - **Sem auto-cadastro.** Só entra quem já está na tabela `users`.
 
@@ -586,11 +588,20 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 6. A cada request autenticado, a API revalida `users.is_active`. Usuário desativado perde a sessão no request seguinte.
 7. Logout: `POST /api/auth/logout`. Usuário atual: `GET /api/me`.
 
+### Login por e-mail e senha
+- Vale para **qualquer usuário de `users` que tenha `password_hash`**, em dev e em produção. Quem não tem senha continua só com o Google. O papel (`admin`, `tesoureiro`, `viewer`) segue mandando nas permissões.
+- `/login` tem um formulário (e-mail, senha) que faz `POST /api/auth/password-login` (form-urlencoded, direto do browser, mesmo origin) com os campos `email`, `password` e `returnUrl`. O `returnUrl` passa pela mesma validação do Google.
+- A API normaliza o e-mail (trim + lower), exige `is_active = true` e confere a senha com o `PasswordHasher` do ASP.NET (sem dependência nova). Sucesso: grava `last_login_at`, emite o mesmo cookie `citros_session` e responde com redirect para o `returnUrl`.
+- Falha: nenhuma sessão é criada e o usuário volta para `/login?error=invalid_credentials` (e-mail inexistente, inativo, sem senha ou senha errada, sem distinguir). A resposta demora o mesmo nos casos de falha (a API sempre faz uma verificação de hash), para não revelar se o e-mail existe.
+- **Limite de tentativas:** 5 falhas por e-mail em 15 minutos bloqueiam novas tentativas desse e-mail pelo resto da janela (`/login?error=too_many_attempts`), mesmo com a senha certa. Um login com sucesso zera o contador. O controle fica em memória da API (uma réplica). Contrapartida aceita: quem sabe o e-mail do admin consegue travar o login dele por 15 minutos, mas não consegue adivinhar a senha.
+- **Definir ou trocar a senha:** comando da API, sem tela. `dotnet run --project src/Financas.Api -- set-password <email>` (dev) ou `dotnet Financas.Api.dll set-password <email>` (container). Lê a senha duas vezes no terminal, sem eco (ou da entrada padrão, se não for um terminal), exige no mínimo 12 caracteres, grava só o hash e **não cria usuário**: o e-mail precisa existir em `users` (seed). Termina com código 0 em sucesso e diferente de 0 em erro.
+- A senha nunca é registrada em log, nem guardada em arquivo ou variável de ambiente.
+
 ### Manter a sessão viva no front
 - As chamadas do servidor do Next à API não repassam `Set-Cookie` ao browser (Server Components não gravam cookies), então a renovação precisa vir de uma chamada feita **pelo browser**.
 - O componente `SessionKeepAlive`, no layout `(app)`, chama `GET /api/me`: ao carregar a página e quando a aba volta a ficar visível depois de mais de 10 minutos.
 - `401` (sessão vencida ou usuário desativado) leva a `/login?error=session_expired&next=<tela atual>`, com a mensagem "Sua sessão expirou". Falha de rede ou `5xx` é ignorada: a API reiniciando não é motivo para deslogar.
-- A tela `/login` entende os códigos `not_allowed`, `unverified`, `google_failed` (vêm da API) e `session_expired` (vem do front).
+- A tela `/login` entende os códigos `not_allowed`, `unverified`, `google_failed`, `invalid_credentials`, `too_many_attempts` (vêm da API) e `session_expired` (vem do front).
 - O `proxy.ts` só olha se o cookie existe e **não** redireciona `/login` para `/board`: com um cookie presente mas inválido isso causaria loop. Quem decide é a página de login, perguntando à API.
 
 ### Mesmo origin
@@ -683,6 +694,7 @@ chore: atualiza dependências
 - [x] Configurar Supabase (projeto, schema, RLS)
 - [x] Configurar variáveis de ambiente
 - [x] Implementar autenticação (login/logout)
+- [x] Login por e-mail + senha: coluna `users.password_hash` (migration), `POST /api/auth/password-login`, limite de tentativas, comando `set-password`, formulário em `/login`, testes
 - [x] Proxy de proteção de rotas
 - [x] Tipos TypeScript exportados do Supabase
 
@@ -869,7 +881,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - Editar categoria/descrição altera apenas a transação editada
 - Reservas financeiras não têm filtro por mês; representam um valor acumulado do board
 - Total de reservas financeiras é somente informativo e nunca entra no cálculo do saldo final
-- Login apenas com Google; só e-mails cadastrados em `users` (verificados no Google) entram. Cadastro e papéis iniciais via seed SQL
+- Login com Google (e-mail verificado) ou com e-mail + senha (hash em `users.password_hash`, definido por comando); só e-mails cadastrados em `users` entram. Cadastro e papéis iniciais via seed SQL
 - Papel global (`board_id` nulo) lê todos os boards; `admin` e `tesoureiro` globais também escrevem
 - Sessão: cookie de 7 dias deslizantes, com `is_active` revalidado a cada request
 - Front e API compartilham o mesmo origin. Em dev, o Next faz rewrite de `/api/*` para a API; no futuro, um reverse proxy

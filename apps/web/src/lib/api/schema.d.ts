@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PasswordLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/logout": {
         parameters: {
             query?: never;
@@ -349,6 +365,11 @@ export interface components {
             entradas: components["schemas"]["CategoryGroupDto"][];
             saidas: components["schemas"]["CategoryGroupDto"][];
         };
+        PasswordLoginForm: {
+            email: null | string;
+            password: null | string;
+            returnUrl: null | string;
+        };
         PeriodSummaryResponse: {
             /** Format: date */
             start: string;
@@ -570,6 +591,28 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+        };
+    };
+    PasswordLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordLoginForm"];
+            };
+        };
+        responses: {
+            /** @description Found */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
