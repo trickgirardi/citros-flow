@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Financas.Api.Features.Boards;
 
-/// <param name="CanMutate">admin ou tesoureiro (no board ou global). Quem só pode ver é viewer.</param>
-public record BoardContext(Board Board, bool CanMutate);
+/// <param name="CanMutate">Financeiro: admin ou tesoureiro (no board ou global).</param>
+/// <param name="CanManageTasks">Tarefas (e estoque, no futuro): admin ou junta_administrativa (no board ou global).</param>
+public record BoardContext(Board Board, bool CanMutate, bool CanManageTasks);
 
 /// <summary>
 /// Autorização por board: a API é a única porta de acesso ao banco, e todo endpoint de board passa por aqui.
@@ -29,7 +30,11 @@ public class BoardAccess(AppDbContext db)
             .ToListAsync(ct);
         if (roles.Count == 0) return null;
 
-        return new BoardContext(board, roles.Any(role => role is "admin" or "tesoureiro"));
+        // Os papéis se somam: quem é tesoureiro e junta_administrativa tem as duas permissões.
+        return new BoardContext(
+            board,
+            roles.Any(role => role is "admin" or "tesoureiro"),
+            roles.Any(role => role is "admin" or "junta_administrativa"));
     }
 
     /// <summary>Admin com papel global (board_id nulo): o único que gerencia boards (spec 6).</summary>

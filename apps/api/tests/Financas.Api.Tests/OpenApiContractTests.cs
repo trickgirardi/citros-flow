@@ -92,4 +92,21 @@ public class OpenApiContractTests(PostgresFixture postgres)
         var import = paths.GetProperty($"{board}/transactions/import/nubank").GetProperty("post");
         Assert.True(import.GetProperty("requestBody").GetProperty("content").TryGetProperty("multipart/form-data", out _));
     }
+
+    [Fact]
+    public async Task Rotas_e_valores_das_tarefas_estao_no_contrato()
+    {
+        var doc = await Doc();
+        var paths = doc.GetProperty("paths");
+
+        foreach (var path in new[]
+                 { "/api/boards/{boardId}/tasks", "/api/boards/{boardId}/task-assignees",
+                   "/api/boards/{boardId}/tasks/{taskId}", "/api/boards/{boardId}/tasks/{taskId}/move" })
+            Assert.True(paths.TryGetProperty(path, out _), path);
+
+        // o front depende destes valores exatos (colunas do quadro)
+        var status = doc.GetProperty("components").GetProperty("schemas").GetProperty("BoardTaskStatus");
+        Assert.Equal(["aFazer", "emAndamento", "concluida"],
+            status.GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
+    }
 }

@@ -32,15 +32,20 @@ public class SeedTests(PostgresFixture postgres)
             await cmd.ExecuteNonQueryAsync();
         }
 
-        Assert.Equal(3, await Count(db, "select count(*) from users where email like '%@exemplo.org'"));
+        Assert.Equal(4, await Count(db, "select count(*) from users where email like '%@exemplo.org'"));
         Assert.Equal(1, await Count(db, "select count(*) from accounts where name = 'Sede Central'"));
         Assert.Equal(2, await Count(db, "select count(*) from boards where name like 'Departamento %'"));
         Assert.Equal(1, await Count(db, """
             select count(*) from user_roles r join users u on u.id = r.user_id
             where u.email = 'admin@exemplo.org' and r.board_id is null and r.role = 'admin'
             """));
-        Assert.Equal(3, await Count(db, """
+        // admin (1) + tesoureiro com dois papéis no mesmo board (2) + junta (1) + leitor (1)
+        Assert.Equal(5, await Count(db, """
             select count(*) from user_roles r join users u on u.id = r.user_id where u.email like '%@exemplo.org'
+            """));
+        Assert.Equal(2, await Count(db, """
+            select count(*) from user_roles r join users u on u.id = r.user_id
+            where u.email = 'tesoureiro@exemplo.org' and r.role in ('tesoureiro', 'junta_administrativa')
             """));
     }
 }

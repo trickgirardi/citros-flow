@@ -6,7 +6,7 @@ namespace Financas.Api.Features.Boards;
 
 public record BoardResponse(Guid Id, string Name);
 
-public record BoardDetailResponse(Guid Id, string Name, bool CanMutate);
+public record BoardDetailResponse(Guid Id, string Name, bool CanMutate, bool CanManageTasks);
 
 public static class BoardEndpoints
 {
@@ -27,7 +27,7 @@ public static class BoardEndpoints
                 var context = await access.GetAsync(user.GetUserId()!.Value, boardId, ct);
                 return context is null
                     ? TypedResults.NotFound()
-                    : TypedResults.Ok(new BoardDetailResponse(context.Board.Id, context.Board.Name, context.CanMutate));
+                    : TypedResults.Ok(new BoardDetailResponse(context.Board.Id, context.Board.Name, context.CanMutate, context.CanManageTasks));
             })
             .WithName("GetBoard");
     }

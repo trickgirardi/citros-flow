@@ -191,8 +191,9 @@ type UserRole = {
   id: string
   user_id: string      // FK → users
   board_id: string | null // FK → boards (null = papel global, vale para todos os boards)
-  role: 'admin' | 'tesoureiro' | 'viewer'
+  role: 'admin' | 'tesoureiro' | 'junta_administrativa' | 'viewer'
 }
+// Uma pessoa pode ter VÁRIOS papéis no mesmo board (ex.: tesoureiro e junta_administrativa); as permissões se somam.
 ```
 
 ### 4.6 FinancialReserve (Reserva Financeira)
@@ -319,8 +320,29 @@ create table user_roles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users(id) on delete cascade,
   board_id uuid references boards(id) on delete cascade,
-  role text not null check (role in ('admin', 'tesoureiro', 'viewer')),
-  unique nulls not distinct (user_id, board_id)   -- impede papel global duplicado
+  role text not null check (role in ('admin', 'tesoureiro', 'junta_administrativa', 'viewer')),
+  unique nulls not distinct (user_id, board_id, role)   -- vários papéis por pessoa, mas não o mesmo duas vezes
+);
+
+-- tasks: quadro kanban do board (spec: tarefas-spec.md)
+create table tasks (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid not null references boards(id) on delete cascade,
+  name text not null,
+  description text not null default '',
+  status text not null check (status in ('a_fazer', 'em_andamento', 'concluida')),
+  position integer not null,            -- ordem dentro da coluna (0 = topo)
+  tags text[] not null default '{}',
+  created_by uuid not null references users(id),
+  created_at timestamptz not null default now(),
+  updated_by uuid references users(id),
+  updated_at timestamptz
+);
+
+create table task_assignees (
+  task_id uuid not null references tasks(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
+  primary key (task_id, user_id)
 );
 
 -- board_share_links
@@ -373,10 +395,13 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 | `admin` ou `tesoureiro` global (`board_id` null) | ✅ todos os boards | ✅ todos os boards |
 | `viewer` no board | ✅ board vinculado | ❌ |
 | `viewer` global | ✅ todos os boards | ❌ |
+| `junta_administrativa` no board ou global | ✅ (em leitura, como o `viewer`, no financeiro) | ❌ no financeiro; ✅ em tarefas (e estoque) |
 | Link público view-only | ✅ apenas via `/api/share/{token}/...` | ❌ |
 
 - `CanView(boardId)`: o usuário tem qualquer papel no board **ou** qualquer papel global. (Diferença em relação ao RLS antigo, em que só o `admin` global lia tudo e o `tesoureiro` global escrevia sem poder ler.)
-- `CanMutate(boardId)`: o usuário tem papel `admin` ou `tesoureiro` no board, ou global.
+- `CanMutate(boardId)`: **financeiro** (transações, reservas, links). O usuário tem papel `admin` ou `tesoureiro` no board, ou global.
+- `CanManageTasks(boardId)`: **tarefas** (e estoque, no futuro). O usuário tem papel `admin` ou `junta_administrativa` no board, ou global. Quem tem qualquer papel no board **lê** o quadro de tarefas.
+- **Papéis se somam:** a mesma pessoa pode ter vários papéis no mesmo board (e globais); `CanMutate` e `CanManageTasks` são calculados sobre todos eles.
 - `CanManageBoards`: o usuário tem papel `admin` **global** (`board_id` nulo). Só ele cria, renomeia e remove boards e vê a tela de gestão (seção 7.12). Admin de um board específico, `tesoureiro` e `viewer` não gerenciam boards.
 - Board que o usuário não pode ver responde **404**, como o `notFound()` atual. Usuário que vê o board mas não pode mutar recebe **403**.
 - Toda escrita checa `CanMutate` explicitamente. Nenhuma depende de efeito colateral do banco.
@@ -584,6 +609,13 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - `DELETE /api/boards/{boardId}`: 204; 404 se não existe.
 - `GET /api/me` passa a devolver `canManageBoards` (o front usa para mostrar o link e proteger `/boards`).
 
+### 7.13 Gestão de Tarefas (kanban)
+- Quadro por board em `/board/{id}/tarefas` com três colunas fixas: **A fazer**, **Em andamento**, **Concluída**. Spec completa em `.specs/tarefas-spec.md`.
+- Tarefa: **nome** e **status** obrigatórios; descrição, responsáveis (pessoas ativas com papel no board ou global) e tags (texto livre, com sugestões) opcionais.
+- Mover entre colunas e reordenar por arrastar (`@dnd-kit`, com mouse, toque e teclado) ou pelo menu "Mover para". O arrastar é otimista.
+- Quem tem qualquer papel no board vê o quadro em leitura; **só `admin` e `junta_administrativa`** criam, editam, movem e removem (`CanManageTasks`, seção 6).
+- API: `GET/POST /api/boards/{id}/tasks`, `PUT/DELETE .../tasks/{taskId}`, `PATCH .../tasks/{taskId}/move`, `GET .../task-assignees` (só para quem gerencia).
+
 ---
 
 ## 8. Autenticação
@@ -660,9 +692,10 @@ API_INTERNAL_URL=              # ex.: http://localhost:5080 (rewrites e fetch se
 |---|---|---|
 | `admin` | Lê e altera transações, reservas e links | Board vinculado ou global |
 | `tesoureiro` | Lê e altera transações, reservas e links | Board vinculado ou global |
+| `junta_administrativa` | Lê o board; altera tarefas (e estoque, no futuro) | Board vinculado ou global |
 | `viewer` | Apenas visualiza o fechamento | Board vinculado ou global |
 
-Para o MVP, `admin` e `tesoureiro` têm as mesmas permissões sobre os dados do board. Um papel com `board_id` nulo vale para todos os boards (regras detalhadas na seção 6).
+Uma pessoa pode ter mais de um papel (ex.: `tesoureiro` e `junta_administrativa` no mesmo board). Financeiro: `admin` e `tesoureiro` têm as mesmas permissões sobre os dados do board. Tarefas e estoque: `admin` e `junta_administrativa`. Um papel com `board_id` nulo vale para todos os boards (regras detalhadas na seção 6).
 
 Boards são gerenciados por uma tela própria, só para `admin` global (seção 7.12). Não há tela para usuários, contas e papéis: são cadastrados por seed SQL (`infra/postgres/seed.example.sql`), inclusive em produção.
 
@@ -871,6 +904,11 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] API: `CanManageBoards` (admin global), `GET /api/admin/boards`, `POST`, `PUT` e `DELETE` de board, `canManageBoards` em `/api/me`, com testes
 - [x] Front: tela `/boards` (listar, criar, renomear, remover com confirmação pelo nome)
 - [x] Front: troca de board e "Gerenciar boards" no menu (hoje na sidebar); `/board` sem boards leva o admin global a `/boards`
+
+### Fase 17 — Tarefas (kanban) e papel `junta_administrativa`
+- [x] Papel `junta_administrativa` e vários papéis por pessoa no mesmo board (migration em `user_roles`)
+- [x] Tabelas `tasks` e `task_assignees`, endpoints, `CanManageTasks` e testes
+- [x] Front: quadro kanban com arrastar, modal de tarefa, tags e responsáveis, visão somente leitura
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo

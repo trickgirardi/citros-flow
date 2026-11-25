@@ -24,17 +24,17 @@ export const BOARD_MODULES: readonly BoardModule[] = [
   },
   {
     icon: Wallet,
-    label: "Fluxo de caixa",
+    label: "Caixa",
     segment: "fluxo-de-caixa",
     soon: false,
   },
   {
     icon: ListChecks,
-    label: "Gestão de tarefas",
+    label: "Tarefas",
     segment: "tarefas",
-    soon: true,
+    soon: false,
   },
-  { icon: Boxes, label: "Gestão de estoque", segment: "estoque", soon: true },
+  { icon: Boxes, label: "Estoque", segment: "estoque", soon: true },
 ]
 
 /** Módulo para onde se vai ao escolher um board fora de um módulo (ex.: de /boards). */

@@ -18,6 +18,7 @@ import {
 import { useSidebar } from "@/components/layout/sidebar-context"
 import { ThemeToggle } from "@/components/theme-provider"
 import { LogoPlate } from "@/components/ui/logo"
+import { initialsOf } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
 type AppSidebarProps = {
@@ -217,18 +218,4 @@ function NavLink({
       {content}
     </Link>
   )
-}
-
-/** Duas iniciais: primeira e última palavra do nome ("Maria da Silva" → "MS"). */
-function initialsOf(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean)
-
-  if (words.length === 0) {
-    return "?"
-  }
-
-  const first = words[0][0]
-  const last = words.length > 1 ? words[words.length - 1][0] : ""
-
-  return `${first}${last}`.toUpperCase()
 }

@@ -5,6 +5,7 @@ using Financas.Api.Features.Boards;
 using Financas.Api.Features.Compartilhamento;
 using Financas.Api.Features.Health;
 using Financas.Api.Features.Reservas;
+using Financas.Api.Features.Tarefas;
 using Financas.Api.Features.Transacoes;
 using System.Reflection;
 using System.Text.Json;
@@ -71,6 +72,7 @@ app.MapBoards();
 app.MapBoardAdmin();
 app.MapTransacoes();
 app.MapReservas();
+app.MapTarefas();
 app.MapCompartilhamento();
 
 app.Run();

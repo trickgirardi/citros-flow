@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<BoardShareLink> BoardShareLinks => Set<BoardShareLink>();
     public DbSet<FinancialReserve> FinancialReserves => Set<FinancialReserve>();
+    public DbSet<BoardTask> Tasks => Set<BoardTask>();
+    public DbSet<TaskAssignee> TaskAssignees => Set<TaskAssignee>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
