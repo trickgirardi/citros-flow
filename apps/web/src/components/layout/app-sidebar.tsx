@@ -17,7 +17,7 @@ import {
 } from "@/components/layout/nav-items"
 import { useSidebar } from "@/components/layout/sidebar-context"
 import { ThemeToggle } from "@/components/theme-provider"
-import { LogoAdaptive } from "@/components/ui/logo"
+import { LogoPlate } from "@/components/ui/logo"
 import { cn } from "@/lib/utils"
 
 type AppSidebarProps = {
@@ -81,9 +81,7 @@ function SidebarContent({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-2 py-3">
-        <div className="flex min-h-11 items-center px-3">
-          <LogoAdaptive />
-        </div>
+        <LogoPlate />
 
         <BoardSwitcher
           boards={boards}

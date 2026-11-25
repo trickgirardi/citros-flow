@@ -25,7 +25,7 @@ Status: aprovado em 2026-11-25. Referência: `AppShell`/`SideMenu` do IGB (`igb-
 ## Sidebar (como no IGB, com a densidade do Citros)
 
 - Largura `17.5rem`, fundo de superfície elevada (`bg-popover`), borda à direita, fixa à esquerda a partir de 1024px.
-- Topo: logo (assinatura no claro, só o símbolo no escuro) e, abaixo, o **seletor de board** (nome do board atual; lista com ✓ no atual).
+- Topo: assinatura completa do IGB sobre uma **placa branca**, igual nos dois temas (no escuro a placa dá o fundo claro que o "BRASIL" azul-marinho pede) e, abaixo, o **seletor de board** (nome do board atual; lista com ✓ no atual).
 - Navegação (alvo de 44px): **Dashboard** · **Fluxo de caixa** · **Tarefas** · **Estoque**. Item atual com `aria-current="page"`, texto azul, negrito e barra azul à esquerda. Os itens valem para o board escolhido.
 - Para admin global, um filete e o item **Gerenciar boards** (`/boards`).
 - Rodapé fixo: cartão do usuário (iniciais e nome), **Alternar tema** e **Sair**.

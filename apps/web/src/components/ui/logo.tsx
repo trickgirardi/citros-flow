@@ -62,4 +62,26 @@ function LogoAdaptive({ width = SIGNATURE_MIN_WIDTH }: { width?: number }) {
   )
 }
 
-export { LogoAdaptive, LogoSymbol }
+/**
+ * Assinatura completa sobre uma placa branca: o topo da sidebar, igual nos dois temas. No claro a
+ * placa se confunde com a superfície branca; no escuro ela dá o fundo claro que o "BRASIL"
+ * azul-marinho da assinatura pede.
+ */
+function LogoPlate({ width = SIGNATURE_MIN_WIDTH }: { width?: number }) {
+  const w = Math.max(width, SIGNATURE_MIN_WIDTH)
+
+  return (
+    <span className="flex justify-center rounded-field bg-white p-2">
+      <Image
+        src="/brand/assinatura-2026-640.png"
+        alt={LOGO_ALT}
+        width={w}
+        height={Math.round((w * 738) / 4115)}
+        unoptimized
+        priority
+      />
+    </span>
+  )
+}
+
+export { LogoAdaptive, LogoPlate, LogoSymbol }
