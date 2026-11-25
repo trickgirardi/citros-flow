@@ -6,6 +6,7 @@ import {
 } from "@/components/board/month-scope"
 import { createApiClient } from "@/lib/api-client"
 import { readData } from "@/lib/api-result"
+import { getCurrentUser } from "@/lib/auth"
 
 type BoardPageProps = {
   searchParams: Promise<{
@@ -22,6 +23,11 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
 
   if (firstBoard) {
     redirect(`/board/${firstBoard.id}?month=${monthScope.monthKey}`)
+  }
+
+  // Sem nenhum board, o admin global cria o primeiro na tela de gestão.
+  if ((await getCurrentUser())?.canManageBoards) {
+    redirect("/boards")
   }
 
   return (

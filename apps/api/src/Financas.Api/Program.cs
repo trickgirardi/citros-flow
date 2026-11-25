@@ -68,6 +68,7 @@ if (app.Environment.IsDevelopment())
 app.MapHealth();
 app.MapAuth();
 app.MapBoards();
+app.MapBoardAdmin();
 app.MapTransacoes();
 app.MapReservas();
 app.MapCompartilhamento();

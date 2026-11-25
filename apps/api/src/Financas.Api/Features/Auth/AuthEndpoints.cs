@@ -2,11 +2,13 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Financas.Api.Features.Boards;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Financas.Api.Features.Auth;
 
-public record MeResponse(Guid Id, string Email, string? DisplayName);
+/// <param name="CanManageBoards">Admin global: vê a tela de gestão de boards.</param>
+public record MeResponse(Guid Id, string Email, string? DisplayName, bool CanManageBoards);
 
 public static class AuthEndpoints
 {
@@ -36,11 +38,12 @@ public static class AuthEndpoints
             .WithName("Logout")
             .Produces(StatusCodes.Status302Found);
 
-        group.MapGet("/me", (ClaimsPrincipal user) =>
+        group.MapGet("/me", async (ClaimsPrincipal user, BoardAccess access, CancellationToken ct) =>
                 TypedResults.Ok(new MeResponse(
                     user.GetUserId()!.Value,
                     user.FindFirstValue(ClaimTypes.Email)!,
-                    user.FindFirstValue(ClaimTypes.Name))))
+                    user.FindFirstValue(ClaimTypes.Name),
+                    await access.IsGlobalAdminAsync(user.GetUserId()!.Value, ct))))
             .WithName("GetMe")
             .RequireAuthorization()
             .ProducesProblem(StatusCodes.Status401Unauthorized);

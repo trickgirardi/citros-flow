@@ -32,6 +32,10 @@ public class BoardAccess(AppDbContext db)
         return new BoardContext(board, roles.Any(role => role is "admin" or "tesoureiro"));
     }
 
+    /// <summary>Admin com papel global (board_id nulo): o único que gerencia boards (spec 6).</summary>
+    public Task<bool> IsGlobalAdminAsync(Guid userId, CancellationToken ct) =>
+        db.UserRoles.AnyAsync(r => r.UserId == userId && r.BoardId == null && r.Role == "admin", ct);
+
     /// <summary>Boards que o usuário vê: os com papel próprio e, havendo papel global, todos.</summary>
     public async Task<List<Board>> ListVisibleAsync(Guid userId, CancellationToken ct)
     {

@@ -377,6 +377,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 
 - `CanView(boardId)`: o usuário tem qualquer papel no board **ou** qualquer papel global. (Diferença em relação ao RLS antigo, em que só o `admin` global lia tudo e o `tesoureiro` global escrevia sem poder ler.)
 - `CanMutate(boardId)`: o usuário tem papel `admin` ou `tesoureiro` no board, ou global.
+- `CanManageBoards`: o usuário tem papel `admin` **global** (`board_id` nulo). Só ele cria, renomeia e remove boards e vê a tela de gestão (seção 7.12). Admin de um board específico, `tesoureiro` e `viewer` não gerenciam boards.
 - Board que o usuário não pode ver responde **404**, como o `notFound()` atual. Usuário que vê o board mas não pode mutar recebe **403**.
 - Toda escrita checa `CanMutate` explicitamente. Nenhuma depende de efeito colateral do banco.
 - `created_by` e `updated_by` vêm sempre da sessão, nunca do corpo da requisição.
@@ -569,6 +570,26 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Reserva é um valor acumulado do board, sem filtro por mês; o mesmo total aparece em qualquer mês selecionado
 - Total de reservas também aparece na imagem de fechamento mensal gerada
 
+### 7.12 Gestão de Boards
+- Cada board é um fluxo de caixa independente (transações, reservas e links próprios). A aplicação pode ter vários boards.
+- **Quem gerencia:** só `admin` global (seção 6, `CanManageBoards`). Os demais papéis não veem a tela nem os endpoints (403).
+- **Tela `/boards`** (só para quem gerencia; os outros recebem 404 da própria página): lista os boards com nome, data de criação e a quantidade de transações, reservas e links públicos (não revogados) de cada um. Ações:
+  - **Novo board:** modal com o nome.
+  - **Editar:** modal para renomear.
+  - **Abrir:** leva a `/board/{id}`.
+  - **Remover:** modal de confirmação que mostra o que será apagado (transações, reservas e links públicos) e só libera o botão depois de digitar o nome exato do board. A remoção é **definitiva**: o banco apaga em cascata transações, reservas, links públicos e os papéis que eram só daquele board. Usuários não são apagados.
+- **Navegação:** o menu do cabeçalho do board ganha (a) a lista de boards que o usuário vê, quando são mais de um, para trocar de board, e (b) o item "Gerenciar boards" para quem pode gerenciar. Sem boards, `/board` leva o admin global a `/boards` (os demais veem a mensagem "Nenhum board vinculado").
+- **Nome:** obrigatório, sem espaços nas pontas, até 80 caracteres, **único** (sem distinguir maiúsculas). Duplicado responde 409.
+- **Conta:** todo board precisa de uma conta (`accounts`), mas não há tela de contas. A API usa a conta mais antiga e cria a "Conta principal" se não existir nenhuma. A tela nunca fala em conta.
+- Quem cria um board não ganha papel nele: o admin global já enxerga todos os boards. Dar acesso a outros usuários continua sendo por seed SQL (papéis).
+
+**Endpoints** (todos exigem sessão; sem papel de admin global: 403, sem revelar se o board existe):
+- `GET /api/admin/boards`: lista com `id`, `name`, `createdAt`, `transactionCount`, `reserveCount`, `shareLinkCount`, por nome (pt-BR).
+- `POST /api/boards` com `{ name }`: 200 com `{ id, name }`; 400 nome inválido; 409 nome já usado.
+- `PUT /api/boards/{boardId}` com `{ name }`: 200 com `{ id, name }`; 400, 404 (board inexistente) e 409 (nome de **outro** board; trocar só maiúsculas do próprio nome é permitido).
+- `DELETE /api/boards/{boardId}`: 204; 404 se não existe.
+- `GET /api/me` passa a devolver `canManageBoards` (o front usa para mostrar o link e proteger `/boards`).
+
 ---
 
 ## 8. Autenticação
@@ -649,7 +670,7 @@ API_INTERNAL_URL=              # ex.: http://localhost:5080 (rewrites e fetch se
 
 Para o MVP, `admin` e `tesoureiro` têm as mesmas permissões sobre os dados do board. Um papel com `board_id` nulo vale para todos os boards (regras detalhadas na seção 6).
 
-Não há tela de administração. Usuários, contas, boards e papéis são cadastrados por seed SQL (`infra/postgres/seed.example.sql`), inclusive em produção.
+Boards são gerenciados por uma tela própria, só para `admin` global (seção 7.12). Não há tela para usuários, contas e papéis: são cadastrados por seed SQL (`infra/postgres/seed.example.sql`), inclusive em produção.
 
 ---
 
@@ -852,9 +873,14 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Etapa 8 — Front passa a consumir a API; login por senha, `forgot-password` e `reset-password` removidos
 - [x] Etapa 9 — Remover Supabase (dependências, `lib/supabase`, `types/database.ts`, `supabase/schema.sql`, `.mcp.json`); README reescrito
 
+### Fase 16 — Gestão de Boards
+- [x] API: `CanManageBoards` (admin global), `GET /api/admin/boards`, `POST`, `PUT` e `DELETE` de board, `canManageBoards` em `/api/me`, com testes
+- [x] Front: tela `/boards` (listar, criar, renomear, remover com confirmação pelo nome)
+- [x] Front: troca de board e "Gerenciar boards" no menu do cabeçalho; `/board` sem boards leva o admin global a `/boards`
+
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo
-- [ ] Página de administração (CRUD de boards/usuários/papéis)
+- [ ] Página de administração de usuários e papéis (boards já têm tela, seção 7.12)
 - [ ] Revogar e listar links de compartilhamento
 - [ ] Tabela própria de categorias
 - [ ] Deploy em VPS: Dockerfiles, `docker-compose.yml` de produção, Caddy (`/api` → API, resto → web), domínio, volume de chaves do Data Protection, backup do Postgres

@@ -16,3 +16,10 @@ export const getBoard = cache(async (boardId: string) => {
     await api.GET("/api/boards/{boardId}", { params: { path: { boardId } } })
   )
 })
+
+/** Boards que o usuário vê (id e nome), para a troca de board no menu. Em cache por request. */
+export const listBoards = cache(async () => {
+  const api = await createApiClient()
+
+  return readData(await api.GET("/api/boards"))
+})

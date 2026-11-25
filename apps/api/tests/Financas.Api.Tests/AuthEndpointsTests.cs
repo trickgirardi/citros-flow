@@ -35,7 +35,7 @@ public class AuthEndpointsTests(PostgresFixture postgres) : IDisposable
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var me = await response.Content.ReadFromJsonAsync<MeResponse>();
-        Assert.Equal(new MeResponse(user.Id, user.Email, "Fulana"), me);
+        Assert.Equal(new MeResponse(user.Id, user.Email, "Fulana", false), me);
     }
 
     [Fact]

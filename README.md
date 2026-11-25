@@ -75,7 +75,7 @@ Sem `Google:ClientId`/`Google:ClientSecret` a API sobe normalmente, mas `/api/au
 
 ### 3. Usuários permitidos (seed SQL)
 
-Não existe tela de administração: só entra quem está na tabela `users`, ativo, com e-mail verificado no Google. Contas, boards, usuários e papéis (`admin`, `tesoureiro`, `viewer`; `board_id` nulo = papel global) são cadastrados pelo seed:
+Não existe tela de administração: só entra quem está na tabela `users`, ativo, com e-mail verificado no Google. Contas, usuários e papéis (`admin`, `tesoureiro`, `viewer`; `board_id` nulo = papel global) são cadastrados pelo seed:
 
 ```bash
 cp infra/postgres/seed.example.sql infra/postgres/seed.sql   # ignorado pelo git; edite com os dados reais
@@ -85,6 +85,8 @@ Escreva os e-mails em **minúsculas**. O script é idempotente (pode rodar de no
 
 - Dev: `docker compose -f docker-compose.dev.yml exec -T postgres psql -U citros -d citros -v ON_ERROR_STOP=1 < infra/postgres/seed.sql`
 - Produção: suba a API uma vez para aplicar as migrations (ou rode `dotnet ef database update` com a connection string de produção) e então `psql "<connection string>" -v ON_ERROR_STOP=1 -f infra/postgres/seed.sql`
+
+**Boards.** O admin global (papel `admin` com `board_id` nulo) cria, renomeia e remove boards na tela `/boards` (menu do cabeçalho → "Gerenciar boards"). O seed só precisa dar acesso aos usuários; os boards do exemplo são opcionais.
 
 **Login com senha (sem Google).** Quem tem senha definida pode entrar pelo formulário de `/login`; quem não tem continua só com o Google. A senha é definida por um comando da API (não há tela), e o e-mail precisa já existir em `users` (rode o seed antes). Mínimo de 12 caracteres, digitada duas vezes e sem eco:
 
