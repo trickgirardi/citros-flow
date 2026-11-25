@@ -9,7 +9,7 @@ Status: aprovado em 2026-11-26. Substitui a página "Em construção" de `/board
 - **Arrastar:** `@dnd-kit` (dependência nova, autorizada) para mover entre colunas e reordenar, com mouse, toque e teclado. Cada cartão tem também o menu "Mover para" (alternativa acessível).
 - **Permissões:** criar, editar, mover e remover tarefas só com `junta_administrativa` ou `admin`. **Quem tem qualquer papel no board vê o quadro**, em leitura. O financeiro não muda (escrever = `admin` ou `tesoureiro`). Uma pessoa só com `junta_administrativa` vê o fluxo de caixa em leitura, como um `viewer`.
 - **Vários papéis por pessoa:** a mesma pessoa pode ter mais de um papel no mesmo board (ex.: `admin`, `tesoureiro` e `junta_administrativa`). As permissões se somam.
-- O estoque (futuro) usará a mesma regra das tarefas.
+- O estoque usa a mesma regra das tarefas (`.specs/estoque-spec.md`).
 
 ## Papéis
 

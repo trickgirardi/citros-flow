@@ -27,8 +27,10 @@ public static class OpenApiExtensions
                 var isDecimal = type == typeof(decimal);
                 if (!isDecimal && !IntegerTypes.Contains(type)) return Task.CompletedTask;
 
-                // Type pode ser null (conversor customizado): sem o `is`, null & Null != 0 daria true.
-                var nullable = schema.Type is { } current && (current & JsonSchemaType.Null) != 0;
+                // decimal?/int? (preço opcional): o gerador não deixa o null no schema quando há conversor
+                // customizado, então ele vem do tipo. Type pode ser null: sem o `is`, null & Null != 0 daria true.
+                var nullable = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) is not null
+                    || (schema.Type is { } current && (current & JsonSchemaType.Null) != 0);
                 var scalar = isDecimal ? JsonSchemaType.String : JsonSchemaType.Integer;
                 schema.Type = nullable ? scalar | JsonSchemaType.Null : scalar;
 

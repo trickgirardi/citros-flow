@@ -34,7 +34,7 @@ export const BOARD_MODULES: readonly BoardModule[] = [
     segment: "tarefas",
     soon: false,
   },
-  { icon: Boxes, label: "Estoque", segment: "estoque", soon: true },
+  { icon: Boxes, label: "Estoque", segment: "estoque", soon: false },
 ]
 
 /** Módulo para onde se vai ao escolher um board fora de um módulo (ex.: de /boards). */

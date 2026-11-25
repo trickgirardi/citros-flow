@@ -53,7 +53,7 @@ public static class TarefasEndpoints
                     if (context is null) return TypedResults.NotFound();
                     if (!context.CanManageTasks) return TypedResults.Forbid();
 
-                    var people = await AssignableUsers(db, boardId).AsNoTracking()
+                    var people = await AssignableUsers.Query(db, boardId).AsNoTracking()
                         .Select(u => new TaskAssigneeDto(u.Id, u.DisplayName ?? u.Email))
                         .ToListAsync(ct);
                     return TypedResults.Ok(people.OrderBy(p => p.Name, Common.PtBr.Comparer).ToList());
@@ -71,7 +71,7 @@ public static class TarefasEndpoints
                     if (context is null) return TypedResults.NotFound();
                     if (!context.CanManageTasks) return TypedResults.Forbid();
                     if (TaskRules.Validate(request, out var clean) is { } error) return Bad(error);
-                    if (await InvalidAssigneesAsync(db, boardId, clean.AssigneeIds, ct)) return Bad(InvalidAssignees);
+                    if (await AssignableUsers.AnyInvalidAsync(db, boardId, clean.AssigneeIds, ct)) return Bad(AssignableUsers.InvalidMessage);
 
                     var statusDb = BoardTaskStatusMap.ToDb(clean.Status);
                     // Id definido aqui (e não pelo banco) para a tarefa e os responsáveis irem no mesmo SaveChanges.
@@ -109,7 +109,7 @@ public static class TarefasEndpoints
                     // Sempre por id E board: tarefa de outro board é 404, mesmo com o id certo.
                     var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.BoardId == boardId, ct);
                     if (task is null) return TypedResults.NotFound();
-                    if (await InvalidAssigneesAsync(db, boardId, clean.AssigneeIds, ct)) return Bad(InvalidAssignees);
+                    if (await AssignableUsers.AnyInvalidAsync(db, boardId, clean.AssigneeIds, ct)) return Bad(AssignableUsers.InvalidMessage);
 
                     var statusDb = BoardTaskStatusMap.ToDb(clean.Status);
                     if (statusDb != task.Status)
@@ -182,15 +182,6 @@ public static class TarefasEndpoints
             .WithName("DeleteTask")
             .ProducesProblem(StatusCodes.Status403Forbidden);
     }
-
-    private const string InvalidAssignees = "Responsável inválido: só pessoas ativas com acesso a este board.";
-
-    private static IQueryable<User> AssignableUsers(AppDbContext db, Guid boardId) =>
-        db.Users.Where(u => u.IsActive
-            && db.UserRoles.Any(r => r.UserId == u.Id && (r.BoardId == boardId || r.BoardId == null)));
-
-    private static async Task<bool> InvalidAssigneesAsync(AppDbContext db, Guid boardId, List<Guid> ids, CancellationToken ct) =>
-        ids.Count > 0 && await AssignableUsers(db, boardId).CountAsync(u => ids.Contains(u.Id), ct) != ids.Count;
 
     private static IQueryable<BoardTask> Column(AppDbContext db, Guid boardId, string status, Guid exceptTaskId) =>
         db.Tasks.Where(t => t.BoardId == boardId && t.Status == status && t.Id != exceptTaskId)

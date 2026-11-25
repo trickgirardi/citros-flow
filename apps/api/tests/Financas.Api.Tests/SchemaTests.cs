@@ -45,14 +45,14 @@ public class SchemaTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Migration_cria_as_nove_tabelas_em_snake_case()
+    public async Task Migration_cria_as_dez_tabelas_em_snake_case()
     {
         var count = await Scalar<long>("""
             select count(*) from information_schema.tables
             where table_schema = 'public'
-              and table_name in ('users','accounts','boards','transactions','user_roles','board_share_links','financial_reserves','tasks','task_assignees')
+              and table_name in ('users','accounts','boards','transactions','user_roles','board_share_links','financial_reserves','tasks','task_assignees','stock_items')
             """);
-        Assert.Equal(9, count);
+        Assert.Equal(10, count);
 
         var updatedColumns = await Scalar<long>("""
             select count(*) from information_schema.columns
@@ -132,6 +132,30 @@ public class SchemaTests : IAsyncLifetime
 
         Assert.Equal(0L, await Scalar<long>($"select count(*) from tasks where id = '{task}'"));
         Assert.Equal(0L, await Scalar<long>($"select count(*) from task_assignees where task_id = '{task}'"));
+    }
+
+    [Fact]
+    public async Task Item_de_estoque_exige_status_valido_e_preco_nao_negativo_e_perde_o_responsavel_ao_apagar_a_pessoa()
+    {
+        var user = await NewUser();
+        var owner = await NewUser();
+        var board = await NewBoard();
+        var item = Guid.NewGuid();
+        await Exec($"insert into stock_items (id, board_id, name, status, assignee_id, price, created_by) values ('{item}', '{board}', 'Papel', 'comprar', '{owner}', 0, '{user}')");
+
+        var badStatus = await Assert.ThrowsAsync<PostgresException>(() =>
+            Exec($"insert into stock_items (board_id, name, status, created_by) values ('{board}', 'X', 'pendente', '{user}')"));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, badStatus.SqlState);
+        var negative = await Assert.ThrowsAsync<PostgresException>(() =>
+            Exec($"insert into stock_items (board_id, name, status, price, created_by) values ('{board}', 'X', 'comprar', -0.01, '{user}')"));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, negative.SqlState);
+
+        await Exec($"delete from users where id = '{owner}'");
+        // set null: o item fica, sem responsável
+        Assert.Equal(1L, await Scalar<long>($"select count(*) from stock_items where id = '{item}' and assignee_id is null"));
+
+        await Exec($"delete from boards where id = '{board}'");
+        Assert.Equal(0L, await Scalar<long>($"select count(*) from stock_items where id = '{item}'"));
     }
 
     [Fact]

@@ -14,4 +14,11 @@ public static class Money
         normalized = Math.Round(value, 2, MidpointRounding.AwayFromZero);
         return normalized is > 0 and <= MaxAmount;
     }
+
+    /// <summary>Como <see cref="TryNormalizePositive"/>, mas aceita zero (ex.: item doado, preço 0,00).</summary>
+    public static bool TryNormalizeNonNegative(decimal value, out decimal normalized)
+    {
+        normalized = Math.Round(value, 2, MidpointRounding.AwayFromZero);
+        return normalized is >= 0 and <= MaxAmount;
+    }
 }

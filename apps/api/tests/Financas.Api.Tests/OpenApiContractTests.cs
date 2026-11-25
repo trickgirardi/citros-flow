@@ -109,4 +109,28 @@ public class OpenApiContractTests(PostgresFixture postgres)
         Assert.Equal(["aFazer", "emAndamento", "concluida"],
             status.GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
     }
+
+    [Fact]
+    public async Task Rotas_e_valores_do_estoque_estao_no_contrato()
+    {
+        var doc = await Doc();
+        var paths = doc.GetProperty("paths");
+
+        foreach (var path in new[]
+                 { "/api/boards/{boardId}/stock-items", "/api/boards/{boardId}/stock-items/{itemId}",
+                   "/api/boards/{boardId}/stock-items/{itemId}/status" })
+            Assert.True(paths.TryGetProperty(path, out _), path);
+
+        var schemas = doc.GetProperty("components").GetProperty("schemas");
+        Assert.Equal(["emEstoque", "aCaminho", "comprar", "comprarComUrgencia"],
+            schemas.GetProperty("StockStatus").GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
+        // preço é string decimal (ou nulo), como todo dinheiro
+        var price = schemas.GetProperty("StockItemDto").GetProperty("properties").GetProperty("price");
+        Assert.Equal("decimal", price.GetProperty("format").GetString());
+        // ...e nulo quando o preço é opcional: o cliente TS precisa de `string | null`
+        Assert.Equal(["null", "string"],
+            price.GetProperty("type").EnumerateArray().Select(e => e.GetString()!).Order());
+        var request = schemas.GetProperty("StockItemRequest").GetProperty("properties").GetProperty("price");
+        Assert.Contains("null", request.GetProperty("type").EnumerateArray().Select(e => e.GetString()));
+    }
 }

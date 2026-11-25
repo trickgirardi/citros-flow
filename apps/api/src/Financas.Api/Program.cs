@@ -3,6 +3,7 @@ using Financas.Api.Data;
 using Financas.Api.Features.Auth;
 using Financas.Api.Features.Boards;
 using Financas.Api.Features.Compartilhamento;
+using Financas.Api.Features.Estoque;
 using Financas.Api.Features.Health;
 using Financas.Api.Features.Reservas;
 using Financas.Api.Features.Tarefas;
@@ -73,6 +74,7 @@ app.MapBoardAdmin();
 app.MapTransacoes();
 app.MapReservas();
 app.MapTarefas();
+app.MapEstoque();
 app.MapCompartilhamento();
 
 app.Run();

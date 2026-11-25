@@ -254,6 +254,84 @@ namespace Financas.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Financas.Api.Data.Entities.StockItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("AssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_id");
+
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("board_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("")
+                        .HasColumnName("details");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("price");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stock_items");
+
+                    b.HasIndex("AssigneeId")
+                        .HasDatabaseName("ix_stock_items_assignee_id");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_stock_items_created_by");
+
+                    b.HasIndex("UpdatedBy")
+                        .HasDatabaseName("ix_stock_items_updated_by");
+
+                    b.HasIndex("BoardId", "Status")
+                        .HasDatabaseName("ix_stock_items_board_id_status");
+
+                    b.ToTable("stock_items", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_stock_items_price", "price is null or price >= 0");
+
+                            t.HasCheckConstraint("ck_stock_items_status", "status in ('em_estoque', 'a_caminho', 'comprar', 'comprar_com_urgencia')");
+                        });
+                });
+
             modelBuilder.Entity("Financas.Api.Data.Entities.TaskAssignee", b =>
                 {
                     b.Property<Guid>("TaskId")
@@ -507,6 +585,35 @@ namespace Financas.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_financial_reserves_users_created_by");
+                });
+
+            modelBuilder.Entity("Financas.Api.Data.Entities.StockItem", b =>
+                {
+                    b.HasOne("Financas.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_stock_items_users_assignee_id");
+
+                    b.HasOne("Financas.Api.Data.Entities.Board", null)
+                        .WithMany()
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_items_boards_board_id");
+
+                    b.HasOne("Financas.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_items_users_created_by");
+
+                    b.HasOne("Financas.Api.Data.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_items_users_updated_by");
                 });
 
             modelBuilder.Entity("Financas.Api.Data.Entities.TaskAssignee", b =>

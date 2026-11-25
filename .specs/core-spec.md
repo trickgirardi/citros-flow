@@ -345,6 +345,21 @@ create table task_assignees (
   primary key (task_id, user_id)
 );
 
+-- stock_items: tabela de estoque do board (spec: estoque-spec.md)
+create table stock_items (
+  id uuid primary key default gen_random_uuid(),
+  board_id uuid not null references boards(id) on delete cascade,
+  name text not null,
+  status text not null check (status in ('em_estoque', 'a_caminho', 'comprar', 'comprar_com_urgencia')),
+  assignee_id uuid references users(id) on delete set null,   -- um só responsável, opcional
+  price numeric(12,2) check (price is null or price >= 0),
+  details text not null default '',
+  created_by uuid not null references users(id),
+  created_at timestamptz not null default now(),
+  updated_by uuid references users(id),
+  updated_at timestamptz
+);
+
 -- board_share_links
 create table board_share_links (
   id uuid primary key default gen_random_uuid(),
@@ -615,6 +630,13 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Mover entre colunas e reordenar por arrastar (`@dnd-kit`, com mouse, toque e teclado) ou pelo menu "Mover para". O arrastar é otimista.
 - Quem tem qualquer papel no board vê o quadro em leitura; **só `admin` e `junta_administrativa`** criam, editam, movem e removem (`CanManageTasks`, seção 6).
 - API: `GET/POST /api/boards/{id}/tasks`, `PUT/DELETE .../tasks/{taskId}`, `PATCH .../tasks/{taskId}/move`, `GET .../task-assignees` (só para quem gerencia).
+
+### 7.14 Estoque (tabela)
+- Tabela por board em `/board/{id}/estoque` com **Item**, **Status**, **Responsável**, **Preço** e **Detalhes**. Spec completa em `.specs/estoque-spec.md`.
+- Status fixos: `Em estoque`, `A caminho`, `Comprar`, `Comprar com urgência`. Obrigatórios: só Item e Status. Responsável é uma pessoa (a mesma lista das tarefas); Preço em reais, sem quantidade e sem total.
+- Busca pelo nome (sem acento e sem maiúsculas), filtro por status com contagem, ordenação pelo cabeçalho (padrão: urgência e nome) e troca de status na própria linha.
+- Mesma regra de permissão das tarefas: qualquer papel no board lê; só `admin` e `junta_administrativa` (`CanManageTasks`) escrevem.
+- API: `GET/POST /api/boards/{id}/stock-items`, `PUT/DELETE .../stock-items/{itemId}`, `PATCH .../stock-items/{itemId}/status`.
 
 ---
 
@@ -909,6 +931,10 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 - [x] Papel `junta_administrativa` e vários papéis por pessoa no mesmo board (migration em `user_roles`)
 - [x] Tabelas `tasks` e `task_assignees`, endpoints, `CanManageTasks` e testes
 - [x] Front: quadro kanban com arrastar, modal de tarefa, tags e responsáveis, visão somente leitura
+
+### Fase 18 — Estoque
+- [x] Tabela `stock_items`, endpoints, regra de preço (0 a 9.999.999.999,99) e testes
+- [x] Front: tabela com busca, filtro por status, ordenação, status na linha e modal de item
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo
