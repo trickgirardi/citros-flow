@@ -48,7 +48,7 @@ export function ShareBoardButton({ boardId, showLabel = true }: ShareBoardButton
       <input type="hidden" name="origin" value="" />
       <Button
         type="submit"
-        variant="outline"
+        variant="on-brand"
         size={showLabel ? "default" : "icon"}
         className={showLabel ? "h-8 px-2" : "size-8"}
         disabled={isPending}

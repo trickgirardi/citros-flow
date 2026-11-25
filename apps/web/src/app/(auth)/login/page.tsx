@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation"
 
+import { ThemeToggle } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { LogoAdaptive } from "@/components/ui/logo"
 import { getCurrentUser } from "@/lib/auth"
 
 type LoginPageProps = {
@@ -48,17 +51,28 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const errorMessage = errorCode ? ERROR_MESSAGES[errorCode] : undefined
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <section className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
-        <div className="mb-5 space-y-1">
-          <h1 className="text-2xl font-semibold">Gnosis - Fluxo de Caixa</h1>
-          <p className="text-sm text-muted-foreground">
+    <main className="relative flex min-h-svh items-center justify-center p-6">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <section className="w-full max-w-sm rounded-panel border bg-card p-6 shadow-card sm:p-8">
+        <div className="mb-6 flex justify-center">
+          <LogoAdaptive />
+        </div>
+
+        <div className="mb-6 space-y-1 text-center">
+          <h1 className="text-h1 text-2xl">Fluxo de Caixa</h1>
+          <p className="text-base text-muted-foreground">
             Entre com e-mail e senha ou com a sua conta Google.
           </p>
         </div>
 
         {errorMessage ? (
-          <p role="alert" className="mb-4 text-sm text-destructive">
+          <p
+            role="alert"
+            className="mb-4 rounded-lg bg-card text-sm font-semibold text-destructive"
+          >
             {errorMessage}
           </p>
         ) : null}
@@ -67,42 +81,42 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <form
           method="post"
           action="/api/auth/password-login"
-          className="grid gap-3"
+          className="grid gap-4"
         >
           <input type="hidden" name="returnUrl" value={nextPath} />
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             E-mail
-            <input
+            <Input
               name="email"
               type="email"
               required
               autoComplete="username"
-              className="h-9 rounded-md border bg-background px-3 text-sm font-normal"
+              className="font-normal"
             />
           </label>
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Senha
-            <input
+            <Input
               name="password"
               type="password"
               required
               autoComplete="current-password"
-              className="h-9 rounded-md border bg-background px-3 text-sm font-normal"
+              className="font-normal"
             />
           </label>
-          <Button type="submit" className="h-9 w-full">
+          <Button type="submit" size="lg" className="w-full">
             Entrar
           </Button>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="my-5 flex items-center gap-3 text-sm text-muted-foreground">
           <span className="h-px flex-1 bg-border" />
           ou
           <span className="h-px flex-1 bg-border" />
         </div>
 
         {/* <a> comum, nao <Link>: o login e um fluxo de redirects para o Google, sem prefetch nem navegacao do Next. */}
-        <Button asChild variant="outline" className="h-9 w-full">
+        <Button asChild variant="outline" size="lg" className="w-full">
           <a href={`/api/auth/login?returnUrl=${encodeURIComponent(nextPath)}`}>
             Entrar com Google
           </a>

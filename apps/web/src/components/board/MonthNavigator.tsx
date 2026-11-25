@@ -24,12 +24,12 @@ export function MonthNavigator({
   if (mode === "menu") {
     return (
       <details className="relative">
-        <summary className="flex h-8 cursor-pointer list-none items-center justify-center rounded-md border bg-background px-2 text-sm font-medium">
+        <summary className="flex h-8 list-none items-center justify-center rounded-pill border-2 border-white/50 px-3 text-sm font-medium text-on-brand hover:bg-white/15">
           <CalendarDays data-icon="inline-start" />
           <span className="sr-only">Abrir calendario</span>
         </summary>
-        <div className="absolute right-0 top-10 z-10 grid min-w-44 gap-1 rounded-md border bg-background p-2 shadow-lg">
-          <p className="px-2 pb-1 text-xs font-medium capitalize text-muted-foreground">
+        <div className="absolute right-0 top-10 z-10 grid min-w-44 gap-1 rounded-field border bg-popover p-2 text-popover-foreground shadow-card">
+          <p className="px-2 pb-1 text-xs font-medium text-muted-foreground first-letter:uppercase">
             {label}
           </p>
           <MonthMenuLink href={getBoardMonthHref(boardId, previousMonthKey)}>
@@ -49,9 +49,9 @@ export function MonthNavigator({
   return (
     <nav
       aria-label="Navegacao mensal"
-      className="flex shrink-0 items-center gap-1 rounded-md border bg-background p-1"
+      className="flex shrink-0 items-center gap-1 rounded-pill border-2 border-white/50 p-1 text-on-brand"
     >
-      <Button asChild type="button" variant="ghost" className="h-8 px-2">
+      <Button asChild type="button" variant="on-brand-ghost" className="h-8 px-2">
         <Link href={getBoardMonthHref(boardId, previousMonthKey)} aria-label="Mes anterior">
           <ChevronLeft data-icon="inline-start" />
         </Link>
@@ -59,16 +59,16 @@ export function MonthNavigator({
 
       <div className="flex min-w-32 items-center justify-center gap-2 px-2 text-sm font-medium">
         <CalendarDays data-icon="inline-start" />
-        <span className="capitalize">{label}</span>
+        <span className="inline-block first-letter:uppercase">{label}</span>
       </div>
 
-      <Button asChild type="button" variant="ghost" className="h-8 px-2">
+      <Button asChild type="button" variant="on-brand-ghost" className="h-8 px-2">
         <Link href={getBoardMonthHref(boardId, nextMonthKey)} aria-label="Proximo mes">
           <ChevronRight data-icon="inline-start" />
         </Link>
       </Button>
 
-      <Button asChild type="button" variant="outline" className="h-8 px-2 text-xs">
+      <Button asChild type="button" variant="on-brand" className="h-8 px-3 text-xs">
         <Link href={getBoardMonthHref(boardId, currentMonthKey)}>Hoje</Link>
       </Button>
     </nav>
@@ -85,7 +85,7 @@ function MonthMenuLink({
   return (
     <Link
       href={href}
-      className="rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+      className="rounded-lg px-2 py-1.5 text-sm hover:bg-accent"
     >
       {children}
     </Link>

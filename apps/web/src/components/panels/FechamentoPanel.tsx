@@ -45,9 +45,9 @@ export function FechamentoPanel({
   const balanceIsPositive = toCents(balance) >= 0
 
   return (
-    <aside className="flex shrink-0 flex-col rounded-lg border bg-card md:min-h-0">
+    <aside className="flex shrink-0 flex-col rounded-card border bg-card shadow-card md:min-h-0">
       <div className="border-b px-3 py-2">
-        <h2 className="text-sm font-semibold">Fechamento</h2>
+        <h2 className="font-sans text-sm font-bold">Fechamento</h2>
         <p className="text-xs text-muted-foreground">
           {transactionCount} transacoes
         </p>
@@ -64,14 +64,12 @@ export function FechamentoPanel({
         />
         <SummaryRow label="Total saidas" value={formatMoney(saidasTotal)} />
 
-        <div className="mt-1 flex flex-row items-center justify-between rounded-md border bg-background px-2">
+        <div className="mt-1 flex flex-row items-center justify-between rounded-lg border bg-background px-2">
           <p className="text-xs text-muted-foreground">Saldo final</p>
           <p
             className={cn(
               "mt-1 text-2xl font-semibold tabular-nums",
-              balanceIsPositive
-                ? "text-emerald-700 dark:text-emerald-300"
-                : "text-rose-700 dark:text-rose-300"
+              balanceIsPositive ? "text-accent-ink" : "text-destructive"
             )}
           >
             {formatMoney(balance)}

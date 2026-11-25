@@ -12,6 +12,7 @@ import {
 import { getCurrentDateKey } from "@/components/board/month-scope";
 import type { Transaction } from "@/components/panels/dashboard-data";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -99,12 +100,12 @@ export function TransactionModal({
             <input type="hidden" name="transactionId" value={transaction.id} />
           ) : null}
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Tipo
             <select
               name="type"
               required
-              className="h-9 rounded-md border bg-background px-3 text-sm"
+              className="min-h-11 rounded-field border border-input bg-card px-4 py-2 text-base font-normal"
               defaultValue={transaction?.type ?? "entrada"}
             >
               <option value="entrada">Entrada</option>
@@ -112,30 +113,28 @@ export function TransactionModal({
             </select>
           </label>
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Valor
-            <input
+            <Input
               name="amount"
               type="number"
               inputMode="decimal"
               min="0.01"
               step="0.01"
               required
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.amount}
               placeholder="0,00"
             />
           </label>
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Descricao
-            <input
+            <Input
               name="description"
               type="text"
               list={descriptionListId}
               required
               maxLength={120}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.description}
               placeholder="Ex: Doacao mensal"
             />
@@ -146,15 +145,14 @@ export function TransactionModal({
             </datalist>
           </label>
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Categoria
-            <input
+            <Input
               name="category"
               type="text"
               list={categoryListId}
               required
               maxLength={80}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.category}
               placeholder="Ex: Doacoes"
             />
@@ -165,13 +163,12 @@ export function TransactionModal({
             </datalist>
           </label>
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Data
-            <input
+            <Input
               name="date"
               type="date"
               required
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={transaction?.date ?? getCurrentDateKey()}
             />
           </label>
@@ -184,12 +181,13 @@ export function TransactionModal({
             <Button
               type="button"
               variant="outline"
+              size="lg"
               disabled={isPending}
               onClick={() => setOpen(false)}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? "Salvando..." : isEditing ? "Atualizar" : "Salvar"}
             </Button>
           </div>

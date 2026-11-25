@@ -1,0 +1,80 @@
+/*
+ * Tokens de cor da identidade visual — alinhados ao sistema do IGB
+ * (igb-sistema/frontend, apps/web/src/styles/tokens.css e docs/brand/brand-guide.md).
+ * ÚNICO arquivo com HEX de cor: componentes usam só os tokens do shadcn (bg-background,
+ * text-muted-foreground, bg-primary…) e os extras definidos em globals.css (brand, accent-ink, danger).
+ * Os pares claro/escuro usam `light-dark()`: valem pelo `color-scheme`, que segue o sistema
+ * (prefers-color-scheme) ou é forçado pela classe `.light`/`.dark` do botão de tema.
+ * Contrastes (WCAG AA) conferidos no guia do IGB: branco sobre azul 7,70:1 · #0F172A sobre amarelo
+ * 10,91:1 · branco sobre vermelho 4,97:1 · vermelho sobre branco 4,97:1.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Marca — cores institucionais [guia do IGB p. 51] */
+  --igb-blue: #2350a0;
+  --igb-yellow: #ecc805;
+  --igb-red: #c84119;
+  /* Retículas das cores da marca, legíveis no escuro */
+  --igb-blue-tint-40: #a7b9d9;
+  --igb-red-tint-50: #e4a08c;
+  /* Neutros claros (derivados do buscador do IGB) */
+  --igb-cream: #f5f2ed;
+  --igb-white: #ffffff;
+  --igb-ink: #0f172a;
+  --igb-ink-muted: #475569; /* #64748B falharia sobre o creme (4,26:1) */
+  --igb-border: #e2e8f0; /* decorativa: não carrega informação */
+  --igb-border-strong: #64748b; /* contorno de campo: ≥ 3:1 (WCAG 1.4.11) */
+  /* Neutros escuros (tema escuro do IGB) */
+  --igb-night-900: #0f172a;
+  --igb-night-800: #1e293b;
+  --igb-night-700: #273449;
+  --igb-night-600: #334155;
+  --igb-mist-400: #94a3b8;
+  --igb-mist-300: #a7b4c6;
+  --igb-mist-100: #dbe4f0;
+
+  /* ── Semânticos (nomes do shadcn) ── */
+  --background: light-dark(var(--igb-cream), var(--igb-night-900));
+  --foreground: light-dark(var(--igb-ink), var(--igb-mist-100));
+  --card: light-dark(var(--igb-white), var(--igb-night-800));
+  --card-foreground: var(--foreground);
+  --popover: light-dark(var(--igb-white), var(--igb-night-700));
+  --popover-foreground: var(--foreground);
+  /* CTA amarelo com texto escuro (nos dois temas) */
+  --primary: var(--igb-yellow);
+  --primary-foreground: var(--igb-ink);
+  /* Estrutura: azul da marca com texto branco */
+  --secondary: var(--igb-blue);
+  --secondary-foreground: var(--igb-white);
+  --muted: color-mix(in srgb, var(--foreground) 6%, var(--card));
+  --muted-foreground: light-dark(var(--igb-ink-muted), var(--igb-mist-300));
+  --accent: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --accent-foreground: var(--foreground);
+  --border: light-dark(var(--igb-border), var(--igb-night-600));
+  --input: light-dark(var(--igb-border-strong), var(--igb-mist-400));
+  /* Anel de foco: azul no claro, amarelo no escuro */
+  --ring: light-dark(var(--igb-blue), var(--igb-yellow));
+
+  /* Extras da marca */
+  --brand: var(--igb-blue); /* cabeçalho */
+  --on-brand: var(--igb-white);
+  --focus-on-brand: var(--igb-yellow); /* anel de foco sobre o azul (4,71:1) */
+  --accent-ink: light-dark(var(--igb-blue), var(--igb-blue-tint-40)); /* link, ativo, valor positivo */
+  --destructive: light-dark(var(--igb-red), var(--igb-red-tint-50)); /* TEXTO de erro / valor negativo */
+  --danger: var(--igb-red); /* FUNDO do botão perigoso */
+  --on-danger: var(--igb-white);
+  --scrim: var(--igb-night-900);
+  --card-shadow: 0 10px 30px light-dark(#2350a014, #0000004d);
+
+  --radius: 0.625rem;
+}
+
+/* Tema forçado pelo botão (a classe vai no <html>); sem classe, vale o sistema. */
+.light {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}

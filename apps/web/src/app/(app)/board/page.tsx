@@ -32,11 +32,11 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
 
   return (
     <section className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-md rounded-panel border bg-card p-6 shadow-card">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Gnosis - Fluxo de Caixa
         </p>
-        <h1 className="mt-2 text-xl font-semibold">Nenhum board vinculado</h1>
+        <h1 className="mt-2 text-2xl">Nenhum board vinculado</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Sua conta ainda nao tem acesso a um board financeiro.
         </p>

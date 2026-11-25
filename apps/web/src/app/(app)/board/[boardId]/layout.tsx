@@ -19,7 +19,7 @@ export default async function BoardLayout({ children, params }: BoardLayoutProps
   ]);
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/30">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden">
       <BoardHeader
         boardId={board.id}
         boardName={board.name}

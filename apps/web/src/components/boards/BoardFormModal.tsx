@@ -10,6 +10,7 @@ import {
   type BoardFormState,
 } from "@/app/(app)/boards/actions"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,7 @@ export function BoardFormModal({ board }: BoardFormModalProps) {
             <Pencil data-icon="inline-start" />
           </Button>
         ) : (
-          <Button type="button" className="h-9">
+          <Button type="button" size="lg">
             <Plus data-icon="inline-start" />
             Novo board
           </Button>
@@ -89,28 +90,27 @@ function BoardForm({
     <form action={formAction} className="grid gap-4">
       {board ? <input type="hidden" name="boardId" value={board.id} /> : null}
 
-      <label className="grid gap-1.5 text-sm font-medium">
+      <label className="grid gap-1.5 text-base font-semibold">
         Nome
-        <input
+        <Input
           name="name"
           type="text"
           required
           maxLength={80}
           autoFocus
           defaultValue={board?.name}
-          className="h-9 rounded-md border bg-background px-3 text-sm font-normal"
           placeholder="Ex: Departamento de Eventos"
         />
       </label>
 
       {state.error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm font-semibold text-destructive">
           {state.error}
         </p>
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" size="lg" disabled={isPending}>
           {isPending ? "Salvando..." : board ? "Salvar" : "Criar board"}
         </Button>
       </div>

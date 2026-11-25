@@ -10,6 +10,7 @@ import {
   type AdminBoard,
 } from "@/components/boards/board-contents"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ export function DeleteBoardModal({ board }: { board: AdminBoard }) {
           type="button"
           variant="ghost"
           size="icon-sm"
+          className="text-destructive hover:bg-destructive/10"
           aria-label={`Remover ${board.name}`}
         >
           <Trash2 data-icon="inline-start" />
@@ -78,21 +80,20 @@ function DeleteBoardForm({
     <form action={formAction} className="grid gap-4">
       <input type="hidden" name="boardId" value={board.id} />
 
-      <label className="grid gap-1.5 text-sm font-medium">
+      <label className="grid gap-1.5 text-base font-semibold">
         Para confirmar, digite o nome do board
-        <input
+        <Input
           type="text"
           autoComplete="off"
           autoFocus
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
-          className="h-9 rounded-md border bg-background px-3 text-sm font-normal"
           placeholder={board.name}
         />
       </label>
 
       {state.error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm font-semibold text-destructive">
           {state.error}
         </p>
       ) : null}
@@ -101,6 +102,7 @@ function DeleteBoardForm({
         <Button
           type="submit"
           variant="destructive"
+          size="lg"
           disabled={isPending || confirmation.trim() !== board.name}
         >
           {isPending ? "Removendo..." : "Remover board"}

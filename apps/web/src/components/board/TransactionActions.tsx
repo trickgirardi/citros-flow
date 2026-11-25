@@ -64,7 +64,8 @@ export function TransactionActions({
         <input type="hidden" name="transactionId" value={transaction.id} />
         <Button
           type="submit"
-          variant="destructive"
+          variant="ghost"
+          className="text-destructive hover:bg-destructive/10"
           size="icon-sm"
           disabled={isPending}
           aria-label="Remover transacao"

@@ -9,6 +9,7 @@ import {
   type ImportNubankCsvState,
 } from "@/app/(app)/board/[boardId]/actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -65,24 +66,23 @@ export function ImportNubankCsvModal({ boardId }: ImportNubankCsvModalProps) {
         <form ref={formRef} action={formAction} encType="multipart/form-data" className="grid gap-4">
           <input type="hidden" name="boardId" value={boardId} />
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Arquivo CSV
-            <input
+            <Input
               name="csvFile"
               type="file"
               accept=".csv,text/csv"
               required
-              className="h-9 rounded-md border bg-background px-3 py-1.5 text-sm"
             />
           </label>
 
-          <div className="rounded-md border bg-muted p-3 text-xs text-muted-foreground">
+          <div className="rounded-field border bg-muted p-4 text-sm text-muted-foreground">
             Valores positivos viram entradas. Valores negativos viram saídas.
             Categoria padrão: Dados importados.
           </div>
 
           {state.error ? (
-            <p className="text-sm text-destructive">{state.error}</p>
+            <p role="alert" className="text-sm font-semibold text-destructive">{state.error}</p>
           ) : null}
 
           {state.success ? (
@@ -95,12 +95,13 @@ export function ImportNubankCsvModal({ boardId }: ImportNubankCsvModalProps) {
             <Button
               type="button"
               variant="outline"
+              size="lg"
               disabled={isPending}
               onClick={() => setOpen(false)}
             >
               Fechar
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? "Importando..." : "Importar"}
             </Button>
           </div>

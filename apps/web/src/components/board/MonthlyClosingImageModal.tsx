@@ -4,8 +4,14 @@ import { useState } from "react"
 import { ImageDown } from "lucide-react"
 
 import { getClosingPeriod } from "@/app/(app)/board/[boardId]/actions"
+import {
+  downloadClosingImage,
+  sumCategories,
+  type ClosingCategorySummary,
+} from "@/components/board/closing-image"
 import type { TransactionGroup } from "@/components/panels/dashboard-data"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -14,13 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { formatCents, normalizeMoneyInput, toCents } from "@/lib/money"
-
-// Todos os valores aqui são em CENTAVOS (inteiros): a soma dos ajustes temporários não pode usar float.
-export type ClosingCategorySummary = {
-  category: string
-  total: number
-}
+import { normalizeMoneyInput, toCents } from "@/lib/money"
 
 // periodStart/periodEnd (yyyy-MM-dd, inclusivos) são o período padrão: o mês exibido no dashboard.
 type MonthlyClosingImageModalProps = {
@@ -108,7 +108,7 @@ export function MonthlyClosingImageModal({
     const finalBalance = previousBalance + entradasTotal - saidasTotal
     const isWholeMonth = start === periodStart && end === periodEnd
 
-    downloadClosingImage({
+    await downloadClosingImage({
       boardName,
       entradas: adjustedEntradas,
       entradasTotal,
@@ -141,84 +141,82 @@ export function MonthlyClosingImageModal({
         </DialogHeader>
 
         <form action={handleSubmit} className="grid gap-4">
-          <div className="grid gap-3 rounded-md border p-3">
-            <p className="text-xs font-medium">Periodo do fechamento</p>
+          <div className="grid gap-3 rounded-field border p-4">
+            <p className="text-sm font-semibold">Periodo do fechamento</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-xs text-muted-foreground">
+              <label className="grid gap-1.5 text-sm font-semibold">
                 Inicio
-                <input
+                <Input
                   name="periodStart"
                   type="date"
                   required
                   defaultValue={periodStart}
-                  className="h-9 rounded-md border bg-background px-3 text-sm text-foreground"
                 />
               </label>
-              <label className="grid gap-1.5 text-xs text-muted-foreground">
+              <label className="grid gap-1.5 text-sm font-semibold">
                 Fim (inclusive)
-                <input
+                <Input
                   name="periodEnd"
                   type="date"
                   required
                   defaultValue={periodEnd}
-                  className="h-9 rounded-md border bg-background px-3 text-sm text-foreground"
                 />
               </label>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Para incluir contas pagas no inicio do mes seguinte, termine no
               dia do pagamento.
             </p>
           </div>
 
-          <div className="grid gap-3 rounded-md border p-3">
-            <p className="text-xs font-medium">Entrada extra</p>
+          <div className="grid gap-3 rounded-field border p-4">
+            <p className="text-sm font-semibold">Entrada extra</p>
             <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
-              <input
+              <Input
                 name="extraEntradaCategory"
                 type="text"
                 maxLength={80}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
                 placeholder="Categoria"
               />
-              <input
+              <Input
                 name="extraEntradaAmount"
                 type="number"
                 inputMode="decimal"
                 min="0"
                 step="0.01"
-                className="h-9 rounded-md border bg-background px-3 text-sm"
                 placeholder="0,00"
               />
             </div>
           </div>
 
-          <div className="grid gap-3 rounded-md border p-3">
-            <p className="text-xs font-medium">Saida extra</p>
+          <div className="grid gap-3 rounded-field border p-4">
+            <p className="text-sm font-semibold">Saida extra</p>
             <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
-              <input
+              <Input
                 name="extraSaidaCategory"
                 type="text"
                 maxLength={80}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
                 placeholder="Categoria"
               />
-              <input
+              <Input
                 name="extraSaidaAmount"
                 type="number"
                 inputMode="decimal"
                 min="0"
                 step="0.01"
-                className="h-9 rounded-md border bg-background px-3 text-sm"
                 placeholder="0,00"
               />
             </div>
           </div>
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p role="alert" className="text-sm font-semibold text-destructive">
+              {error}
+            </p>
+          ) : null}
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending ? "Gerando..." : "Baixar imagem"}
             </Button>
           </div>
@@ -296,444 +294,6 @@ function aggregateCategories(
     )
 }
 
-function sumCategories(categories: ClosingCategorySummary[]) {
-  return categories.reduce((total, category) => total + category.total, 0)
-}
-
-function downloadClosingImage({
-  boardName,
-  entradas,
-  entradasTotal,
-  finalBalance,
-  periodLabel,
-  previousBalance,
-  reservasTotal,
-  saidas,
-  saidasTotal,
-}: {
-  boardName: string
-  entradas: ClosingCategorySummary[]
-  entradasTotal: number
-  finalBalance: number
-  periodLabel: string
-  previousBalance: number
-  reservasTotal: number
-  saidas: ClosingCategorySummary[]
-  saidasTotal: number
-}) {
-  const width = 1400
-  const height = 1400
-  const padding = 78
-  const contentTop = 265
-  const canvas = document.createElement("canvas")
-  const context = canvas.getContext("2d")
-
-  if (!context) {
-    return
-  }
-
-  canvas.width = width
-  canvas.height = height
-
-  context.fillStyle = "#fff7ed"
-  context.fillRect(0, 0, width, height)
-
-  drawDecorations(context, width)
-  drawText(
-    context,
-    "Fluxo de caixa",
-    width / 2,
-    92,
-    "bold 62px Arial",
-    "#142554",
-    "center"
-  )
-  drawText(
-    context,
-    boardName,
-    width / 2,
-    152,
-    "bold 34px Arial",
-    "#142554",
-    "center"
-  )
-  drawText(
-    context,
-    periodLabel,
-    width / 2,
-    198,
-    "26px Arial",
-    "#475569",
-    "center"
-  )
-
-  const columnWidth = (width - padding * 2 - 42) / 2
-  const cardHeight = 640
-  const leftX = padding
-  const rightX = padding + columnWidth + 42
-  const finalTop = contentTop + cardHeight + 70
-
-  drawCategoryCard(context, {
-    accent: "#fb9473",
-    categories: entradas,
-    icon: "💰",
-    title: "RESUMO DE ENTRADAS",
-    totalLabel: "TOTAL ENTRADAS",
-    x: leftX,
-    y: contentTop,
-    width: columnWidth,
-    height: cardHeight,
-  })
-  drawCategoryCard(context, {
-    accent: "#162857",
-    categories: saidas,
-    icon: "🧾",
-    sign: "-",
-    title: "RESUMO DE SAÍDAS",
-    totalLabel: "TOTAL SAÍDAS",
-    x: rightX,
-    y: contentTop,
-    width: columnWidth,
-    height: cardHeight,
-  })
-  drawFinalBalanceCard(context, {
-    entradasTotal,
-    finalBalance,
-    previousBalance,
-    reservasTotal,
-    saidasTotal,
-    x: padding,
-    y: finalTop,
-    width,
-  })
-
-  canvas.toBlob((blob) => {
-    if (!blob) {
-      return
-    }
-
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-
-    link.href = url
-    link.download = `fechamento-${slugify(boardName)}-${slugify(periodLabel)}.png`
-    link.click()
-    URL.revokeObjectURL(url)
-  }, "image/png")
-}
-
-function drawCategoryCard(
-  context: CanvasRenderingContext2D,
-  {
-    accent,
-    categories,
-    height,
-    icon,
-    sign = "",
-    title,
-    totalLabel,
-    width,
-    x,
-    y,
-  }: {
-    accent: string
-    categories: ClosingCategorySummary[]
-    height: number
-    icon: string
-    sign?: string
-    title: string
-    totalLabel: string
-    width: number
-    x: number
-    y: number
-  }
-) {
-  const headerHeight = 132
-  const totalHeight = 78
-  const totalY = y + height - totalHeight
-  const listTop = y + 190
-  const rowHeight = 48
-  const listBottom = totalY - 28
-  const maxVisibleRows = Math.max(
-    0,
-    Math.floor((listBottom - listTop) / rowHeight)
-  )
-  const visibleCategories = categories.slice(0, maxVisibleRows)
-  const hiddenCount = categories.length - visibleCategories.length
-  const total = sumCategories(categories)
-
-  fillRoundRect(context, x, y, width, height, 28, "#ffffff")
-  strokeRoundRect(context, x, y, width, height, 28, accent)
-  fillRoundRect(context, x, y, width, headerHeight, 28, accent)
-  context.fillStyle = accent
-  context.fillRect(x, y + headerHeight - 28, width, 28)
-
-  drawText(context, icon, x + 44, y + 82, "54px Arial", "#111827")
-  drawText(context, title, x + 128, y + 58, "bold 34px Arial", "#ffffff")
-  drawText(context, "", x + 128, y + 98, "bold 34px Arial", "#ffffff")
-
-  if (categories.length === 0) {
-    drawText(
-      context,
-      "Sem lançamentos",
-      x + 42,
-      y + 205,
-      "28px Arial",
-      "#64748b"
-    )
-  }
-
-  visibleCategories.forEach((category, index) => {
-    const rowY = listTop + index * rowHeight
-
-    drawText(
-      context,
-      truncate(category.category, 24),
-      x + 42,
-      rowY,
-      "28px Arial"
-    )
-    drawText(
-      context,
-      `${sign}${formatCents(category.total)}`,
-      x + width - 42,
-      rowY,
-      "28px Arial",
-      "#111827",
-      "right"
-    )
-
-    drawLine(context, x + 42, rowY + 20, x + width - 42, rowY + 20, "#e5e7eb")
-  })
-
-  if (hiddenCount > 0) {
-    drawText(
-      context,
-      `+ ${hiddenCount} categoria(s)`,
-      x + 42,
-      totalY - 22,
-      "22px Arial",
-      "#64748b"
-    )
-  }
-
-  context.fillStyle = `${accent}22`
-  context.fillRect(x, totalY, width, totalHeight)
-  drawText(
-    context,
-    totalLabel,
-    x + 42,
-    totalY + 50,
-    "bold 32px Arial",
-    "#111827"
-  )
-  drawText(
-    context,
-    `${sign}${formatCents(total)}`,
-    x + width - 42,
-    totalY + 50,
-    "bold 32px Arial",
-    "#111827",
-    "right"
-  )
-}
-
-function drawFinalBalanceCard(
-  context: CanvasRenderingContext2D,
-  {
-    entradasTotal,
-    finalBalance,
-    previousBalance,
-    reservasTotal,
-    saidasTotal,
-    x,
-    y,
-    width,
-  }: {
-    entradasTotal: number
-    finalBalance: number
-    previousBalance: number
-    reservasTotal: number
-    saidasTotal: number
-    x: number
-    y: number
-    width: number
-  }
-) {
-  const cardWidth = width - x * 2
-  const cardHeight = 350
-  const headerHeight = 92
-  const balanceColor = finalBalance >= 0 ? "#fb9473" : "#b91c1c"
-
-  fillRoundRect(context, x, y, cardWidth, cardHeight, 28, "#ffffff")
-  strokeRoundRect(context, x, y, cardWidth, cardHeight, 28, "#162857")
-  fillRoundRect(context, x, y, cardWidth, headerHeight, 28, "#162857")
-  context.fillStyle = "#162857"
-  context.fillRect(x, y + headerHeight - 28, cardWidth, 28)
-
-  drawText(
-    context,
-    "SALDO FINAL DO MÊS",
-    width / 2,
-    y + 58,
-    "bold 40px Arial",
-    "#ffffff",
-    "center"
-  )
-  drawText(
-    context,
-    `Saldo anterior (${formatCents(previousBalance)}) + Entradas (${formatCents(
-      entradasTotal
-    )}) - Saídas (${formatCents(saidasTotal)})`,
-    width / 2,
-    y + 150,
-    "30px Arial",
-    "#111827",
-    "center"
-  )
-  drawText(
-    context,
-    formatCents(finalBalance),
-    width / 2,
-    y + 245,
-    "bold 76px Arial",
-    balanceColor,
-    "center"
-  )
-  drawText(
-    context,
-    `Reservas financeiras: ${formatCents(reservasTotal)}`,
-    width / 2,
-    y + 310,
-    "26px Arial",
-    "#475569",
-    "center"
-  )
-}
-
-function drawText(
-  context: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  font: string,
-  color = "#111827",
-  align: CanvasTextAlign = "left"
-) {
-  context.font = font
-  context.fillStyle = color
-  context.textAlign = align
-  context.fillText(text, x, y)
-}
-
-function drawLine(
-  context: CanvasRenderingContext2D,
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-  color: string
-) {
-  context.strokeStyle = color
-  context.lineWidth = 2
-  context.beginPath()
-  context.moveTo(fromX, fromY)
-  context.lineTo(toX, toY)
-  context.stroke()
-}
-
-function drawDecorations(context: CanvasRenderingContext2D, width: number) {
-  context.globalAlpha = 0.18
-  drawText(context, "$", 78, 88, "bold 64px Arial", "#162857", "center")
-  drawText(
-    context,
-    "↗",
-    width - 90,
-    145,
-    "bold 70px Arial",
-    "#fb9473",
-    "center"
-  )
-  drawText(
-    context,
-    "●",
-    width - 170,
-    78,
-    "bold 42px Arial",
-    "#fb9473",
-    "center"
-  )
-  context.globalAlpha = 1
-}
-
-function fillRoundRect(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  color: string
-) {
-  context.fillStyle = color
-  roundedRectPath(context, x, y, width, height, radius)
-  context.fill()
-}
-
-function strokeRoundRect(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  color: string
-) {
-  context.strokeStyle = color
-  context.lineWidth = 4
-  roundedRectPath(context, x, y, width, height, radius)
-  context.stroke()
-}
-
-function roundedRectPath(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
-) {
-  context.beginPath()
-  context.moveTo(x + radius, y)
-  context.lineTo(x + width - radius, y)
-  context.quadraticCurveTo(x + width, y, x + width, y + radius)
-  context.lineTo(x + width, y + height - radius)
-  context.quadraticCurveTo(
-    x + width,
-    y + height,
-    x + width - radius,
-    y + height
-  )
-  context.lineTo(x + radius, y + height)
-  context.quadraticCurveTo(x, y + height, x, y + height - radius)
-  context.lineTo(x, y + radius)
-  context.quadraticCurveTo(x, y, x + radius, y)
-  context.closePath()
-}
-
-function truncate(value: string, maxLength: number) {
-  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value
-}
-
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1)
-}
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
 }

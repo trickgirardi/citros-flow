@@ -13,6 +13,7 @@ import {
 } from "@/app/(app)/board/[boardId]/actions";
 import type { FinancialReserve } from "@/components/panels/dashboard-data";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/money";
 import {
   Dialog,
@@ -118,23 +119,22 @@ export function FinancialReservesModal({
             <input type="hidden" name="reserveId" value={editingReserve.id} />
           ) : null}
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Nome
-            <input
+            <Input
               key={editingReserve?.id ?? "new-name"}
               name="name"
               type="text"
               required
               maxLength={80}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={editingReserve?.name}
               placeholder="Ex: Caixinha, Poupanca"
             />
           </label>
 
-          <label className="grid gap-1.5 text-sm font-medium">
+          <label className="grid gap-1.5 text-base font-semibold">
             Valor
-            <input
+            <Input
               key={editingReserve ? `${editingReserve.id}-amount` : "new-amount"}
               name="amount"
               type="number"
@@ -142,14 +142,13 @@ export function FinancialReservesModal({
               min="0.01"
               step="0.01"
               required
-              className="h-9 rounded-md border bg-background px-3 text-sm"
               defaultValue={editingReserve?.amount}
               placeholder="0,00"
             />
           </label>
 
           {state.error ? (
-            <p className="text-sm text-destructive">{state.error}</p>
+            <p role="alert" className="text-sm font-semibold text-destructive">{state.error}</p>
           ) : null}
 
           <div className="flex justify-end gap-2">
@@ -157,6 +156,7 @@ export function FinancialReservesModal({
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 disabled={isPending}
                 onClick={() => {
                   setEditingReserve(null);
@@ -166,7 +166,7 @@ export function FinancialReservesModal({
                 Cancelar edicao
               </Button>
             ) : null}
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" size="lg" disabled={isPending}>
               {isPending
                 ? "Salvando..."
                 : isEditing
@@ -208,7 +208,7 @@ function FinancialReserveRow({
 
   return (
     <div className="grid gap-1">
-      <div className="flex items-center justify-between gap-2 rounded-md border bg-muted px-3 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-field border bg-muted px-3 py-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{reserve.name}</p>
           <p className="text-xs text-muted-foreground tabular-nums">
@@ -237,7 +237,8 @@ function FinancialReserveRow({
             <input type="hidden" name="reserveId" value={reserve.id} />
             <Button
               type="submit"
-              variant="destructive"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10"
               size="icon-sm"
               disabled={isPending}
               aria-label="Remover reserva"

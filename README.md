@@ -32,6 +32,7 @@ Browser ──> Next.js (apps/web, :3000)
 ├── docker-compose.dev.yml
 ├── .env.example
 ├── .specs/core-spec.md   # spec do produto (fonte da verdade)
+├── .specs/design-spec.md # identidade visual (alinhada ao sistema do IGB)
 └── docs/refactor-plan.md # histórico da migração do Supabase para a API .NET
 ```
 
