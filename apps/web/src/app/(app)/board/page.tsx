@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation"
 
-import {
-  getMonthScope,
-  getSingleSearchParam,
-} from "@/components/board/month-scope"
+import { getSingleSearchParam } from "@/components/board/month-scope"
 import { PageContent } from "@/components/layout/page-content"
 import { PageHeader } from "@/components/layout/page-header"
 import { createApiClient } from "@/lib/api-client"
@@ -18,14 +15,18 @@ type BoardPageProps = {
 
 export default async function BoardPage({ searchParams }: BoardPageProps) {
   const { month } = await searchParams
-  const monthScope = getMonthScope(getSingleSearchParam(month))
+  const monthParam = getSingleSearchParam(month)
   const api = await createApiClient()
   const boards = readData(await api.GET("/api/boards"))
   const firstBoard = boards[0]
 
+  // A tela inicial é o dashboard do primeiro board. Com `?month=` (endereço antigo) vai ao fluxo de
+  // caixa naquele mês.
   if (firstBoard) {
     redirect(
-      `/board/${firstBoard.id}/fluxo-de-caixa?month=${monthScope.monthKey}`
+      monthParam
+        ? `/board/${firstBoard.id}/fluxo-de-caixa?month=${encodeURIComponent(monthParam)}`
+        : `/board/${firstBoard.id}/dashboard`
     )
   }
 

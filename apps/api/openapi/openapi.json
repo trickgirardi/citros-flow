@@ -290,6 +290,57 @@
         }
       }
     },
+    "/api/boards/{boardId}/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "operationId": "GetDashboard",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/boards/{boardId}/share-links": {
       "post": {
         "tags": [
@@ -2030,6 +2081,225 @@
           }
         }
       },
+      "DashboardCash": {
+        "required": [
+          "previousBalance",
+          "entradasTotal",
+          "saidasTotal",
+          "balance",
+          "reservesTotal",
+          "transactionCount"
+        ],
+        "type": "object",
+        "properties": {
+          "previousBalance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "entradasTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "saidasTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "balance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "reservesTotal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardMonth": {
+        "required": [
+          "month",
+          "entradas",
+          "saidas"
+        ],
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "entradas": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          },
+          "saidas": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "type": "string",
+            "format": "decimal"
+          }
+        }
+      },
+      "DashboardResponse": {
+        "required": [
+          "month",
+          "cash",
+          "history",
+          "tasks",
+          "stock"
+        ],
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "cash": {
+            "$ref": "#/components/schemas/DashboardCash"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardMonth"
+            }
+          },
+          "tasks": {
+            "$ref": "#/components/schemas/DashboardTasks"
+          },
+          "stock": {
+            "$ref": "#/components/schemas/DashboardStock"
+          }
+        }
+      },
+      "DashboardStock": {
+        "required": [
+          "emEstoque",
+          "aCaminho",
+          "comprar",
+          "comprarComUrgencia",
+          "attention",
+          "attentionTotal"
+        ],
+        "type": "object",
+        "properties": {
+          "emEstoque": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aCaminho": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprar": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprarComUrgencia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attention": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardStockItem"
+            }
+          },
+          "attentionTotal": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DashboardStockItem": {
+        "required": [
+          "id",
+          "name",
+          "status",
+          "assignee"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StockStatus"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskAssigneeDto"
+              }
+            ]
+          }
+        }
+      },
+      "DashboardTaskItem": {
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BoardTaskStatus"
+          }
+        }
+      },
+      "DashboardTasks": {
+        "required": [
+          "aFazer",
+          "emAndamento",
+          "concluida",
+          "mine",
+          "mineTotal"
+        ],
+        "type": "object",
+        "properties": {
+          "aFazer": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "emAndamento": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "concluida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mine": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardTaskItem"
+            }
+          },
+          "mineTotal": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "HealthResponse": {
         "required": [
           "status"
@@ -2701,6 +2971,9 @@
     },
     {
       "name": "Boards"
+    },
+    {
+      "name": "Dashboard"
     },
     {
       "name": "Compartilhamento"

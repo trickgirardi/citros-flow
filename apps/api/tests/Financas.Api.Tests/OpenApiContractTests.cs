@@ -133,4 +133,21 @@ public class OpenApiContractTests(PostgresFixture postgres)
         var request = schemas.GetProperty("StockItemRequest").GetProperty("properties").GetProperty("price");
         Assert.Contains("null", request.GetProperty("type").EnumerateArray().Select(e => e.GetString()));
     }
+
+    [Fact]
+    public async Task Rota_e_formato_do_dashboard_estao_no_contrato()
+    {
+        var doc = await Doc();
+        Assert.True(doc.GetProperty("paths").TryGetProperty("/api/boards/{boardId}/dashboard", out var route));
+        var parameters = route.GetProperty("get").GetProperty("parameters").EnumerateArray().Select(p => p.GetProperty("name").GetString());
+        Assert.Contains("month", parameters);
+
+        var schemas = doc.GetProperty("components").GetProperty("schemas");
+        foreach (var (schema, property) in new[] { ("DashboardCash", "balance"), ("DashboardMonth", "entradas"), ("DashboardMonth", "saidas") })
+        {
+            var money = schemas.GetProperty(schema).GetProperty("properties").GetProperty(property);
+            Assert.Equal("string", money.GetProperty("type").GetString()); // dinheiro é string decimal, nunca nulo aqui
+            Assert.Equal("decimal", money.GetProperty("format").GetString());
+        }
+    }
 }

@@ -20,7 +20,7 @@ export const BOARD_MODULES: readonly BoardModule[] = [
     icon: LayoutDashboard,
     label: "Dashboard",
     segment: "dashboard",
-    soon: true,
+    soon: false,
   },
   {
     icon: Wallet,
@@ -38,7 +38,7 @@ export const BOARD_MODULES: readonly BoardModule[] = [
 ]
 
 /** Módulo para onde se vai ao escolher um board fora de um módulo (ex.: de /boards). */
-export const DEFAULT_MODULE_SEGMENT = "fluxo-de-caixa"
+export const DEFAULT_MODULE_SEGMENT = "dashboard"
 
 /** Módulo de um endereço /board/{id}/{segment}; undefined fora de um módulo. */
 export function moduleSegmentOf(pathname: string) {

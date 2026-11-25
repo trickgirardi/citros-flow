@@ -7,7 +7,6 @@ type BoardIndexPageProps = {
   searchParams: Promise<{ month?: string | string[] }>
 }
 
-// Endereço antigo do fluxo de caixa (/board/{id}?month=...): segue funcionando, com o mês.
 export default async function BoardIndexPage({
   params,
   searchParams,
@@ -16,5 +15,11 @@ export default async function BoardIndexPage({
   const monthParam = getSingleSearchParam(month)
   const query = monthParam ? `?month=${encodeURIComponent(monthParam)}` : ""
 
-  redirect(`/board/${boardId}/fluxo-de-caixa${query}`)
+  // Com `?month=` é o endereço antigo do fluxo de caixa: segue funcionando, com o mês. Sem mês, vai
+  // à tela inicial do board (o dashboard).
+  redirect(
+    monthParam
+      ? `/board/${boardId}/fluxo-de-caixa${query}`
+      : `/board/${boardId}/dashboard`
+  )
 }

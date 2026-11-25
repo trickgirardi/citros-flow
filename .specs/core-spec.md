@@ -638,6 +638,12 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Mesma regra de permissão das tarefas: qualquer papel no board lê; só `admin` e `junta_administrativa` (`CanManageTasks`) escrevem.
 - API: `GET/POST /api/boards/{id}/stock-items`, `PUT/DELETE .../stock-items/{itemId}`, `PATCH .../stock-items/{itemId}/status`.
 
+### 7.15 Dashboard (tela inicial)
+- Primeira tela do board: `/board/{id}/dashboard`. O login, `/board` e a troca de board fora de um módulo levam a ela. Spec completa em `.specs/dashboard-spec.md` (modelo: tela inicial do `igb-sistema`).
+- Blocos: **Caixa do mês** (cartões de Saldo final, Entradas, Saídas e Reservas + gráfico de colunas de entradas × saídas dos últimos 6 meses), **Tarefas** (contagem por coluna e "Minhas tarefas") e **Estoque** (contagem por status e "Precisa de ação"). Cada bloco tem o link "Ver tudo" para o módulo.
+- Qualquer papel no board lê. Os totais vêm calculados da API (`GET /api/boards/{id}/dashboard?month=yyyy-MM`), com os mesmos números do resumo mensal; o front só formata. Gráfico em CSS, com tabela equivalente para leitor de tela.
+- `/board/{id}?month=...` (endereço antigo do fluxo de caixa) continua levando ao fluxo de caixa.
+
 ---
 
 ## 8. Autenticação
@@ -935,6 +941,10 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 ### Fase 18 — Estoque
 - [x] Tabela `stock_items`, endpoints, regra de preço (0 a 9.999.999.999,99) e testes
 - [x] Front: tabela com busca, filtro por status, ordenação, status na linha e modal de item
+
+### Fase 19 — Dashboard (tela inicial)
+- [x] `GET /api/boards/{id}/dashboard` (caixa, histórico de 6 meses, tarefas, estoque) e testes
+- [x] Front: cartões de indicador, gráfico de colunas, blocos de tarefas e estoque; dashboard como tela inicial
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo

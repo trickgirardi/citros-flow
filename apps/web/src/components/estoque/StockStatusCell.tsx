@@ -8,10 +8,11 @@ import {
   type StockItem,
   type StockStatus,
 } from "@/components/estoque/stock-data"
+import {
+  BADGE_CLASS,
+  StockStatusBadge,
+} from "@/components/estoque/StockStatusBadge"
 import { cn } from "@/lib/utils"
-
-const BADGE =
-  "inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
 
 /** O status como selo (texto + cor), ou como seletor na própria linha para quem gerencia. */
 export function StockStatusCell({
@@ -26,7 +27,7 @@ export function StockStatusCell({
   const info = statusInfo(item.status)
 
   if (!canManage) {
-    return <span className={cn(BADGE, info.style)}>{info.label}</span>
+    return <StockStatusBadge status={item.status} />
   }
 
   return (
@@ -41,7 +42,7 @@ export function StockStatusCell({
         value={item.status}
         onChange={(event) => onChange(event.target.value as StockStatus)}
         className={cn(
-          BADGE,
+          BADGE_CLASS,
           info.style,
           "cursor-pointer appearance-none py-1 pr-7 pl-2.5"
         )}

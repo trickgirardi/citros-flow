@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{boardId}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boards/{boardId}/share-links": {
         parameters: {
             query?: never;
@@ -491,6 +507,71 @@ export interface components {
             total: string;
             transactions: components["schemas"]["TransactionDto"][];
         };
+        DashboardCash: {
+            /** Format: decimal */
+            previousBalance: string;
+            /** Format: decimal */
+            entradasTotal: string;
+            /** Format: decimal */
+            saidasTotal: string;
+            /** Format: decimal */
+            balance: string;
+            /** Format: decimal */
+            reservesTotal: string;
+            /** Format: int32 */
+            transactionCount: number;
+        };
+        DashboardMonth: {
+            month: string;
+            /** Format: decimal */
+            entradas: string;
+            /** Format: decimal */
+            saidas: string;
+        };
+        DashboardResponse: {
+            month: string;
+            cash: components["schemas"]["DashboardCash"];
+            history: components["schemas"]["DashboardMonth"][];
+            tasks: components["schemas"]["DashboardTasks"];
+            stock: components["schemas"]["DashboardStock"];
+        };
+        DashboardStock: {
+            /** Format: int32 */
+            emEstoque: number;
+            /** Format: int32 */
+            aCaminho: number;
+            /** Format: int32 */
+            comprar: number;
+            /** Format: int32 */
+            comprarComUrgencia: number;
+            attention: components["schemas"]["DashboardStockItem"][];
+            /** Format: int32 */
+            attentionTotal: number;
+        };
+        DashboardStockItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            status: components["schemas"]["StockStatus"];
+            assignee: null | components["schemas"]["TaskAssigneeDto"];
+        };
+        DashboardTaskItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            status: components["schemas"]["BoardTaskStatus"];
+        };
+        DashboardTasks: {
+            /** Format: int32 */
+            aFazer: number;
+            /** Format: int32 */
+            emAndamento: number;
+            /** Format: int32 */
+            concluida: number;
+            mine: components["schemas"]["DashboardTaskItem"][];
+            /** Format: int32 */
+            mineTotal: number;
+        };
         HealthResponse: {
             status: string;
         };
@@ -897,6 +978,46 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetDashboard: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path: {
+                boardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
