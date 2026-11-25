@@ -1,17 +1,22 @@
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from "react"
+
+import { Button } from "@/components/ui/button"
 
 // POST direto para a API (mesmo origin, via /api): ela encerra a sessão e redireciona para /login.
-// `variant="on-brand"` para usar sobre a faixa azul do cabeçalho.
 export function LogoutButton({
+  children = "Sair",
+  className = "h-8 px-3",
   variant = "outline",
 }: {
-  variant?: "outline" | "on-brand";
+  children?: ReactNode
+  className?: string
+  variant?: "outline" | "ghost"
 }) {
   return (
     <form method="post" action="/api/auth/logout">
-      <Button type="submit" variant={variant} className="h-8 px-3">
-        Sair
+      <Button type="submit" variant={variant} className={className}>
+        {children}
       </Button>
     </form>
-  );
+  )
 }

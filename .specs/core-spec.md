@@ -403,8 +403,8 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Header: Instituição+Board | Mês/Ano | Share | Menu   │
-├──────────────┬──────────────┬───────────────────────┤
+│ Sidebar │ Header: Board · título | Mês/Ano | Share   │
+│ (boards,├──────────────┬──────────────┬─────────────┤
 │   ENTRADAS   │    SAÍDAS    │     FECHAMENTO        │
 │  (scroll)    │  (scroll)    │     (estático)        │
 │              │              │                       │
@@ -424,24 +424,18 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 - Painel de Fechamento: estático, sem scroll
 - Agrupamento por `category` dentro de cada painel com separador visual
 - Responsividade: mobile-first, colunas colapsam em telas pequenas
-- Header concentra contexto operacional e comandos globais: board selecionado, mês/ano, link público e logout
+- **Sidebar lateral** (spec em `.specs/sidebar-spec.md`) substitui o menu hambúrguer: troca de board, módulos do board (Dashboard, Fluxo de caixa, Gestão de tarefas, Gestão de estoque), Gerenciar boards (admin global), tema e Sair
+- Header (faixa azul) concentra o contexto da tela: botão da sidebar, board e título, e as ações da tela (mês/ano e link público no fluxo de caixa)
 - Header não exibe email do usuário no MVP
-- Header desktop:
-  - esquerda: ícone da instituição + nome do board
-  - centro: navegação de calendário/mês
-  - direita: botão Compartilhar com label + menu hamburguer com opção `Sair`
-- Header mobile:
-  - esquerda: ícone da instituição + nome do board
-  - direita: botão de calendário apenas com ícone, botão compartilhar apenas com ícone, menu hamburguer
-  - botão de calendário abre menu com mês atual, mês anterior, próximo mês e hoje
-- Menu hamburguer abre um menu simples; no MVP contém apenas `Sair`
+- Em telas largas o navegador de mês aparece completo; em faixas estreitas (sidebar aberta, celular) vira um botão de calendário com menu (mês atual, anterior, próximo e hoje), e o botão Compartilhar fica só com o ícone. A escolha é pela largura do cabeçalho, não da janela
 - Área principal contém apenas informações e ações do board atual
 - Sem scroll global no dashboard autenticado; scroll fica isolado nos painéis
+- Com a sidebar aberta o conteúdo comprime na horizontal. O grid escolhe pela largura do **conteúdo**: ≥ 56rem três colunas; de 42rem a 56rem entradas | saídas com o fechamento embaixo; abaixo disso empilhado
 
 ### 7.3 Escopo Mensal
-- Componente `MonthNavigator` fica no Header
+- Componente `MonthNavigator` fica no Header do fluxo de caixa
 - Controles mínimos: mês anterior, mês seguinte, mês atual
-- URL carrega período selecionado via query string: `/board/[boardId]?month=YYYY-MM`
+- URL carrega período selecionado via query string: `/board/[boardId]/fluxo-de-caixa?month=YYYY-MM` (o endereço antigo `/board/[boardId]?month=YYYY-MM` redireciona para ele)
 - Sem query string, usar mês atual
 - Navegação de mês não altera board selecionado
 - Todas as queries de transações recebem `boardId`, `startDate` e `endDate`
@@ -578,7 +572,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
   - **Editar:** modal para renomear.
   - **Abrir:** leva a `/board/{id}`.
   - **Remover:** modal de confirmação que mostra o que será apagado (transações, reservas e links públicos) e só libera o botão depois de digitar o nome exato do board. A remoção é **definitiva**: o banco apaga em cascata transações, reservas, links públicos e os papéis que eram só daquele board. Usuários não são apagados.
-- **Navegação:** o menu do cabeçalho do board ganha (a) a lista de boards que o usuário vê, quando são mais de um, para trocar de board, e (b) o item "Gerenciar boards" para quem pode gerenciar. Sem boards, `/board` leva o admin global a `/boards` (os demais veem a mensagem "Nenhum board vinculado").
+- **Navegação:** a sidebar tem o seletor de board e, para quem pode gerenciar, o item "Gerenciar boards". Sem boards, `/board` leva o admin global a `/boards` (os demais veem a mensagem "Nenhum board vinculado").
 - **Nome:** obrigatório, sem espaços nas pontas, até 80 caracteres, **único** (sem distinguir maiúsculas). Duplicado responde 409.
 - **Conta:** todo board precisa de uma conta (`accounts`), mas não há tela de contas. A API usa a conta mais antiga e cria a "Conta principal" se não existir nenhuma. A tela nunca fala em conta.
 - Quem cria um board não ganha papel nele: o admin global já enxerga todos os boards. Dar acesso a outros usuários continua sendo por seed SQL (papéis).
@@ -876,7 +870,7 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 ### Fase 16 — Gestão de Boards
 - [x] API: `CanManageBoards` (admin global), `GET /api/admin/boards`, `POST`, `PUT` e `DELETE` de board, `canManageBoards` em `/api/me`, com testes
 - [x] Front: tela `/boards` (listar, criar, renomear, remover com confirmação pelo nome)
-- [x] Front: troca de board e "Gerenciar boards" no menu do cabeçalho; `/board` sem boards leva o admin global a `/boards`
+- [x] Front: troca de board e "Gerenciar boards" no menu (hoje na sidebar); `/board` sem boards leva o admin global a `/boards`
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo

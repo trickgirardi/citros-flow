@@ -126,7 +126,7 @@ export async function createTransaction(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -156,7 +156,7 @@ export async function updateTransaction(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -186,7 +186,7 @@ export async function updateTransactionDescription(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -226,7 +226,7 @@ export async function updateTransactionsCategory(
     return { ...failure(error), updatedCount: 0 };
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return { ...SUCCESS, updatedCount: data?.updatedCount ?? 0 };
 }
@@ -254,7 +254,7 @@ export async function deleteTransaction(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -293,7 +293,7 @@ export async function importNubankCsv(
     return { ...failure(error), importedCount: 0 };
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return { ...SUCCESS, importedCount: data?.importedCount ?? 0 };
 }
@@ -370,7 +370,7 @@ export async function createFinancialReserve(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -400,7 +400,7 @@ export async function updateFinancialReserve(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }
@@ -428,7 +428,7 @@ export async function deleteFinancialReserve(
     return failure(error);
   }
 
-  revalidatePath(`/board/${boardId}`);
+  revalidatePath(`/board/${boardId}/fluxo-de-caixa`);
 
   return SUCCESS;
 }

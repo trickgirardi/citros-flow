@@ -25,10 +25,9 @@ function parseRequiredText(value: FormDataEntryValue | null) {
   return text ? text : null;
 }
 
-// /boards é a tela de gestão; /board (layout) mostra a lista de boards no menu de troca.
+// A lista de boards está na sidebar (layout do shell), então vale para todas as telas.
 function revalidateBoards() {
-  revalidatePath("/boards");
-  revalidatePath("/board", "layout");
+  revalidatePath("/", "layout");
 }
 
 export async function createBoard(

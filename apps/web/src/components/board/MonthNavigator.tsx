@@ -93,5 +93,5 @@ function MonthMenuLink({
 }
 
 function getBoardMonthHref(boardId: string, monthKey: string) {
-  return `/board/${boardId}?month=${monthKey}`;
+  return `/board/${boardId}/fluxo-de-caixa?month=${monthKey}`;
 }

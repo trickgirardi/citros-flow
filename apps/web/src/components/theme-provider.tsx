@@ -49,8 +49,8 @@ function ThemeToggle({
       aria-label="Alternar tema claro e escuro"
       title="Alternar tema (tecla D)"
     >
-      <Moon className="dark:hidden" />
-      <Sun className="hidden dark:block" />
+      <Moon className={showLabel ? "size-5 dark:hidden" : "dark:hidden"} />
+      <Sun className={showLabel ? "hidden size-5 dark:block" : "hidden dark:block"} />
       {showLabel ? "Alternar tema" : null}
     </Button>
   )

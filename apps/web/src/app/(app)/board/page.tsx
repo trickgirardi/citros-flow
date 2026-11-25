@@ -4,6 +4,8 @@ import {
   getMonthScope,
   getSingleSearchParam,
 } from "@/components/board/month-scope"
+import { PageContent } from "@/components/layout/page-content"
+import { PageHeader } from "@/components/layout/page-header"
 import { createApiClient } from "@/lib/api-client"
 import { readData } from "@/lib/api-result"
 import { getCurrentUser } from "@/lib/auth"
@@ -22,7 +24,9 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
   const firstBoard = boards[0]
 
   if (firstBoard) {
-    redirect(`/board/${firstBoard.id}?month=${monthScope.monthKey}`)
+    redirect(
+      `/board/${firstBoard.id}/fluxo-de-caixa?month=${monthScope.monthKey}`
+    )
   }
 
   // Sem nenhum board, o admin global cria o primeiro na tela de gestão.
@@ -31,16 +35,16 @@ export default async function BoardPage({ searchParams }: BoardPageProps) {
   }
 
   return (
-    <section className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-panel border bg-card p-6 shadow-card">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Gnosis - Fluxo de Caixa
-        </p>
-        <h1 className="mt-2 text-2xl">Nenhum board vinculado</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sua conta ainda nao tem acesso a um board financeiro.
-        </p>
-      </div>
-    </section>
+    <>
+      <PageHeader title="Gnosis - Fluxo de Caixa" />
+      <PageContent className="flex items-center justify-center">
+        <div className="w-full max-w-md rounded-panel border bg-card p-6 shadow-card">
+          <h1 className="text-2xl">Nenhum board vinculado</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sua conta ainda nao tem acesso a um board financeiro.
+          </p>
+        </div>
+      </PageContent>
+    </>
   )
 }

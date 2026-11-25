@@ -21,7 +21,7 @@ export function BoardCalendarControls({ boardId }: BoardCalendarControlsProps) {
 
   return (
     <>
-      <div className="hidden sm:block">
+      <div className="hidden @4xl/header:block">
         <MonthNavigator
           boardId={boardId}
           currentMonthKey={getCurrentMonthKey()}
@@ -30,7 +30,7 @@ export function BoardCalendarControls({ boardId }: BoardCalendarControlsProps) {
           previousMonthKey={monthScope.previousMonthKey}
         />
       </div>
-      <div className="sm:hidden">
+      <div className="@4xl/header:hidden">
         <MonthNavigator
           boardId={boardId}
           currentMonthKey={getCurrentMonthKey()}

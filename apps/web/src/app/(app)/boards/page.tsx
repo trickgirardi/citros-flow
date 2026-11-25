@@ -1,14 +1,12 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Landmark } from "lucide-react"
+import { Landmark } from "lucide-react"
 
 import { BoardFormModal } from "@/components/boards/BoardFormModal"
 import { describeBoardContents } from "@/components/boards/board-contents"
 import { DeleteBoardModal } from "@/components/boards/DeleteBoardModal"
-import { LogoutButton } from "@/components/layout/logout-button"
-import { ThemeToggle } from "@/components/theme-provider"
-import { Button } from "@/components/ui/button"
-import { LogoSymbol } from "@/components/ui/logo"
+import { PageContent } from "@/components/layout/page-content"
+import { PageHeader } from "@/components/layout/page-header"
 import { createApiClient } from "@/lib/api-client"
 import { readData } from "@/lib/api-result"
 import { getCurrentUser } from "@/lib/auth"
@@ -29,25 +27,9 @@ export default async function BoardsPage() {
   const boards = readData(await api.GET("/api/admin/boards"))
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden">
-      <header className="on-brand flex shrink-0 items-center justify-between gap-3 bg-brand px-3 py-2 text-on-brand sm:px-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <LogoSymbol size={36} decorative />
-          <h1 className="text-lg">Boards</h1>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button asChild variant="on-brand" className="h-8 px-3">
-            <Link href="/board">
-              <ArrowLeft />
-              Voltar
-            </Link>
-          </Button>
-          <ThemeToggle variant="on-brand-ghost" />
-          <LogoutButton variant="on-brand" />
-        </div>
-      </header>
-
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+    <>
+      <PageHeader title="Boards" />
+      <PageContent className="overflow-y-auto">
         <div className="mx-auto grid max-w-3xl gap-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-base text-muted-foreground">
@@ -69,7 +51,7 @@ export default async function BoardsPage() {
                   className="flex items-center justify-between gap-3 rounded-card border bg-card p-3 shadow-card"
                 >
                   <Link
-                    href={`/board/${board.id}`}
+                    href={`/board/${board.id}/fluxo-de-caixa`}
                     className="flex min-w-0 items-center gap-3"
                   >
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-field border bg-muted text-accent-ink">
@@ -94,7 +76,7 @@ export default async function BoardsPage() {
             </ul>
           )}
         </div>
-      </div>
-    </section>
+      </PageContent>
+    </>
   )
 }

@@ -23,6 +23,9 @@
   --font-heading: var(--font-fraunces), Georgia, serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", "Liberation Mono", monospace;
 
+  /* Largura da sidebar (a do IGB): assinatura de 240px + 20px de respiro de cada lado. */
+  --spacing-sidebar: 17.5rem;
+
   /* Forma [derivada do buscador do IGB] */
   --radius-field: 14px;
   --radius-card: 16px;
