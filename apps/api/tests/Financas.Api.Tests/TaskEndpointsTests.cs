@@ -28,8 +28,8 @@ public class TaskEndpointsTests(PostgresFixture postgres)
     }
 
     private static object Body(string name = "Tarefa", string status = "aFazer", string? description = null,
-        string[]? tags = null, Guid[]? assignees = null) =>
-        new { name, description = description ?? "", status, tags = tags ?? [], assigneeIds = assignees ?? [] };
+        string[]? tags = null, Guid[]? assignees = null, string? priority = null) =>
+        new { name, description = description ?? "", status, tags = tags ?? [], assigneeIds = assignees ?? [], priority };
 
     private static Task<(HttpStatusCode Status, JsonElement Body)> Create(
         HttpClient client, Guid board, object body) => Send(client, HttpMethod.Post, $"/api/boards/{board}/tasks", body);
@@ -194,6 +194,69 @@ public class TaskEndpointsTests(PostgresFixture postgres)
         Assert.Equal("", body.GetProperty("description").GetString());
         Assert.Equal(0, body.GetProperty("tags").GetArrayLength());
         Assert.Equal(0, body.GetProperty("assignees").GetArrayLength());
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("priority").ValueKind); // sem prioridade
+    }
+
+    [Theory]
+    [InlineData("baixa")]
+    [InlineData("media")]
+    [InlineData("alta")]
+    [InlineData("urgente")]
+    public async Task Prioridade_aceita_os_quatro_niveis_e_vem_na_criacao_e_na_lista(string priority)
+    {
+        var board = await TestData.AddBoardAsync(Cs);
+        var admin = await ClientWith(board.Id, "admin");
+
+        var (status, body) = await Create(admin, board.Id, Body(priority: priority));
+
+        Assert.Equal(HttpStatusCode.OK, status);
+        Assert.Equal(priority, body.GetProperty("priority").GetString());
+        var listed = Assert.Single(await Tasks(admin, board.Id));
+        Assert.Equal(priority, listed.GetProperty("priority").GetString());
+        await using var db = TestDb.Open(Cs);
+        Assert.Equal(priority, (await db.Tasks.AsNoTracking().SingleAsync(t => t.BoardId == board.Id)).Priority);
+    }
+
+    [Theory]
+    [InlineData("critica")]
+    [InlineData("")]
+    public async Task Prioridade_desconhecida_responde_400(string priority)
+    {
+        var board = await TestData.AddBoardAsync(Cs);
+
+        var (status, _) = await Create(await ClientWith(board.Id, "admin"), board.Id, Body(priority: priority));
+
+        Assert.Equal(HttpStatusCode.BadRequest, status);
+    }
+
+    [Fact]
+    public async Task Editar_troca_a_prioridade_e_sem_prioridade_no_corpo_tira_a_prioridade()
+    {
+        var board = await TestData.AddBoardAsync(Cs);
+        var admin = await ClientWith(board.Id, "admin");
+        var (_, created) = await Create(admin, board.Id, Body(priority: "baixa"));
+        var url = $"/api/boards/{board.Id}/tasks/{created.GetProperty("id").GetGuid()}";
+
+        var (_, changed) = await Send(admin, HttpMethod.Put, url, Body(priority: "urgente"));
+        Assert.Equal("urgente", changed.GetProperty("priority").GetString());
+
+        var (status, cleared) = await Send(admin, HttpMethod.Put, url, new { name = "Tarefa", status = "aFazer" });
+        Assert.Equal(HttpStatusCode.OK, status);
+        Assert.Equal(JsonValueKind.Null, cleared.GetProperty("priority").ValueKind);
+    }
+
+    [Fact]
+    public async Task Quem_so_le_ve_a_prioridade_mas_nao_a_altera()
+    {
+        var board = await TestData.AddBoardAsync(Cs);
+        var admin = await ClientWith(board.Id, "admin");
+        var viewer = await ClientWith(board.Id, "viewer");
+        var (_, created) = await Create(admin, board.Id, Body(priority: "alta"));
+
+        Assert.Equal("alta", Assert.Single(await Tasks(viewer, board.Id)).GetProperty("priority").GetString());
+        var (status, _) = await Send(viewer, HttpMethod.Put,
+            $"/api/boards/{board.Id}/tasks/{created.GetProperty("id").GetGuid()}", Body(priority: "baixa"));
+        Assert.Equal(HttpStatusCode.Forbidden, status);
     }
 
     [Theory]

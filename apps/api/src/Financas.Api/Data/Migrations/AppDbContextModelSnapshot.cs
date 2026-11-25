@@ -169,6 +169,10 @@ namespace Financas.Api.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("position");
 
+                    b.Property<string>("Priority")
+                        .HasColumnType("text")
+                        .HasColumnName("priority");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -203,6 +207,8 @@ namespace Financas.Api.Data.Migrations
 
                     b.ToTable("tasks", null, t =>
                         {
+                            t.HasCheckConstraint("ck_tasks_priority", "priority is null or priority in ('baixa', 'media', 'alta', 'urgente')");
+
                             t.HasCheckConstraint("ck_tasks_status", "status in ('a_fazer', 'em_andamento', 'concluida')");
                         });
                 });

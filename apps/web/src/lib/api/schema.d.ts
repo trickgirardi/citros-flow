@@ -494,6 +494,7 @@ export interface components {
             position: number;
             tags: string[];
             assignees: components["schemas"]["TaskAssigneeDto"][];
+            priority: null | components["schemas"]["TaskPriority"];
         };
         /** @enum {unknown} */
         BoardTaskStatus: "aFazer" | "emAndamento" | "concluida";
@@ -560,6 +561,7 @@ export interface components {
             id: string;
             name: string;
             status: components["schemas"]["BoardTaskStatus"];
+            priority: null | components["schemas"]["TaskPriority"];
         };
         DashboardTasks: {
             /** Format: int32 */
@@ -695,12 +697,15 @@ export interface components {
             id: string;
             name: string;
         };
+        /** @enum {unknown} */
+        TaskPriority: "baixa" | "media" | "alta" | "urgente" | null;
         TaskRequest: {
             name: null | string;
             description: null | string;
             status: null | components["schemas"]["BoardTaskStatus"];
             tags: null | string[];
             assigneeIds: null | string[];
+            priority?: null | components["schemas"]["TaskPriority"];
         };
         TransactionDto: {
             /** Format: uuid */

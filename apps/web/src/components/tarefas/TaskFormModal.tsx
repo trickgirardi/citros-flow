@@ -12,6 +12,7 @@ import { TagInput } from "@/components/tarefas/TagInput"
 import {
   TASK_COLUMNS,
   TASK_LIMITS,
+  TASK_PRIORITIES,
   type Task,
   type TaskAssignee,
   type TaskStatus,
@@ -167,6 +168,22 @@ function TaskForm({
               {TASK_COLUMNS.map((column) => (
                 <option key={column.status} value={column.status}>
                   {column.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1.5 text-base font-semibold">
+            Prioridade
+            <select
+              name="priority"
+              defaultValue={task?.priority ?? ""}
+              className="min-h-11 rounded-field border border-input bg-card px-4 py-2 text-base font-normal disabled:opacity-60"
+            >
+              <option value="">Sem prioridade</option>
+              {[...TASK_PRIORITIES].reverse().map((item) => (
+                <option key={item.priority} value={item.priority}>
+                  {item.label}
                 </option>
               ))}
             </select>

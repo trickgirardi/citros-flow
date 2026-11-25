@@ -4,6 +4,7 @@ import { useMemo, useOptimistic, useState, useTransition } from "react"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 
 import { setStockItemStatus } from "@/app/(app)/board/[boardId]/estoque/actions"
+import { FilterButton } from "@/components/FilterButton"
 import { PageContent } from "@/components/layout/page-content"
 import { PageHeader } from "@/components/layout/page-header"
 import {
@@ -256,42 +257,6 @@ export function StockTable({
         onClose={() => setForm(null)}
       />
     </>
-  )
-}
-
-function FilterButton({
-  active,
-  count,
-  label,
-  onClick,
-}: {
-  active: boolean
-  count: number
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "inline-flex min-h-8 items-center gap-1.5 rounded-pill border px-3 text-sm font-semibold pointer-coarse:min-h-11",
-        active
-          ? "border-brand bg-brand text-on-brand"
-          : "bg-card hover:bg-accent"
-      )}
-    >
-      {label}
-      <span
-        className={cn(
-          "text-xs",
-          active ? "text-on-brand" : "text-muted-foreground"
-        )}
-      >
-        {count}
-      </span>
-    </button>
   )
 }
 

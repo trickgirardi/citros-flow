@@ -30,7 +30,10 @@ type KanbanColumnProps = {
   onMove: (task: Task, status: TaskStatus) => void
   onOpen: (task: Task) => void
   status: TaskStatus
+  /** As tarefas visíveis (depois do filtro e da ordenação). */
   tasks: Task[]
+  /** Quantas a coluna tem no total (maior que `tasks` com filtro ligado). */
+  total: number
 }
 
 export function KanbanColumn({
@@ -41,6 +44,7 @@ export function KanbanColumn({
   onOpen,
   status,
   tasks,
+  total,
 }: KanbanColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
     disabled: !canManage,
@@ -55,7 +59,7 @@ export function KanbanColumn({
       <header className="flex items-center gap-2 border-b px-3 py-2">
         <h2 className="font-sans text-sm font-bold">{label}</h2>
         <span className="rounded-pill bg-muted px-2 text-xs leading-5 font-semibold text-muted-foreground">
-          {tasks.length}
+          {tasks.length === total ? total : `${tasks.length} de ${total}`}
         </span>
         {canManage ? (
           <Button

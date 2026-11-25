@@ -12,6 +12,8 @@ public class BoardTask
     /// <summary>Ordem dentro da coluna (0 = topo).</summary>
     public int Position { get; set; }
     public List<string> Tags { get; set; } = [];
+    /// <summary>"baixa", "media", "alta" ou "urgente"; nulo = sem prioridade.</summary>
+    public string? Priority { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }

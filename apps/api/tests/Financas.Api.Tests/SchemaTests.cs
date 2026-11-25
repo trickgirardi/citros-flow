@@ -124,6 +124,11 @@ public class SchemaTests : IAsyncLifetime
         var invalid = await Assert.ThrowsAsync<PostgresException>(() =>
             Exec($"insert into tasks (board_id, name, status, position, created_by) values ('{board}', 'X', 'feito', 0, '{user}')"));
         Assert.Equal(PostgresErrorCodes.CheckViolation, invalid.SqlState);
+        var invalidPriority = await Assert.ThrowsAsync<PostgresException>(() =>
+            Exec($"insert into tasks (board_id, name, status, priority, position, created_by) values ('{board}', 'X', 'a_fazer', 'critica', 0, '{user}')"));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, invalidPriority.SqlState);
+        await Exec($"insert into tasks (board_id, name, status, priority, position, created_by) values ('{board}', 'Y', 'a_fazer', 'urgente', 1, '{user}')");
+        Assert.Equal(0L, await Scalar<long>($"select count(*) from tasks where id = '{task}' and priority is not null")); // sem prioridade por padrão
         var dupAssignee = await Assert.ThrowsAsync<PostgresException>(() =>
             Exec($"insert into task_assignees (task_id, user_id) values ('{task}', '{user}')"));
         Assert.Equal(PostgresErrorCodes.UniqueViolation, dupAssignee.SqlState);

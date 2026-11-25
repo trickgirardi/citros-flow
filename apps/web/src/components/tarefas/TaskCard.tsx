@@ -11,6 +11,7 @@ import {
   type Task,
   type TaskStatus,
 } from "@/components/tarefas/task-data"
+import { TaskPriorityBadge } from "@/components/tarefas/TaskPriorityBadge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -86,6 +87,12 @@ export function TaskCardBody({
 
   return (
     <article className="cursor-pointer rounded-lg border bg-card p-3 text-left shadow-sm hover:border-input">
+      {task.priority ? (
+        <div className="mb-1.5">
+          <TaskPriorityBadge priority={task.priority} />
+        </div>
+      ) : null}
+
       <div className="flex items-start gap-1">
         <h3 className="min-w-0 flex-1 font-sans text-sm font-bold [overflow-wrap:anywhere]">
           {task.name}

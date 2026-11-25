@@ -2003,7 +2003,8 @@
           "status",
           "position",
           "tags",
-          "assignees"
+          "assignees",
+          "priority"
         ],
         "type": "object",
         "properties": {
@@ -2035,6 +2036,16 @@
             "items": {
               "$ref": "#/components/schemas/TaskAssigneeDto"
             }
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskPriority"
+              }
+            ]
           }
         }
       },
@@ -2250,7 +2261,8 @@
         "required": [
           "id",
           "name",
-          "status"
+          "status",
+          "priority"
         ],
         "type": "object",
         "properties": {
@@ -2263,6 +2275,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/BoardTaskStatus"
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskPriority"
+              }
+            ]
           }
         }
       },
@@ -2794,6 +2816,15 @@
           }
         }
       },
+      "TaskPriority": {
+        "enum": [
+          "baixa",
+          "media",
+          "alta",
+          "urgente",
+          null
+        ]
+      },
       "TaskRequest": {
         "required": [
           "name",
@@ -2844,6 +2875,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskPriority"
+              }
+            ]
           }
         }
       },

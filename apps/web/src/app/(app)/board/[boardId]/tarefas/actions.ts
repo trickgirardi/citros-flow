@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache"
 
-import type { TaskMove, TaskStatus } from "@/components/tarefas/task-data"
+import {
+  TASK_PRIORITIES,
+  type TaskMove,
+  type TaskPriority,
+  type TaskStatus,
+} from "@/components/tarefas/task-data"
 import { createApiClient } from "@/lib/api-client"
 import { callApi } from "@/lib/api-result"
 
@@ -33,10 +38,16 @@ function parseTaskBody(formData: FormData) {
     return null
   }
 
+  // Vazio (ou valor desconhecido) = sem prioridade.
+  const priority = parseText(formData.get("priority"))
+
   return {
     assigneeIds: formData.getAll("assigneeIds").map((id) => id.toString()),
     description: parseText(formData.get("description")),
     name,
+    priority: TASK_PRIORITIES.some((item) => item.priority === priority)
+      ? (priority as TaskPriority)
+      : null,
     status: status as TaskStatus,
     tags: formData.getAll("tags").map((tag) => tag.toString()),
   }

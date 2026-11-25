@@ -84,6 +84,7 @@ public static class TarefasEndpoints
                         Description = clean.Description,
                         Status = statusDb,
                         Tags = clean.Tags,
+                        Priority = TaskPriorityMap.ToDb(clean.Priority),
                         Position = await db.Tasks.CountAsync(t => t.BoardId == boardId && t.Status == statusDb, ct),
                     };
                     db.Tasks.Add(task);
@@ -121,6 +122,7 @@ public static class TarefasEndpoints
                     task.Name = clean.Name;
                     task.Description = clean.Description;
                     task.Tags = clean.Tags;
+                    task.Priority = TaskPriorityMap.ToDb(clean.Priority);
                     Touch(task, userId);
 
                     db.TaskAssignees.RemoveRange(await db.TaskAssignees.Where(a => a.TaskId == taskId).ToListAsync(ct));
@@ -199,7 +201,7 @@ public static class TarefasEndpoints
     }
 
     private static BoardTaskDto ToDto(BoardTask t, List<TaskAssigneeDto> assignees) =>
-        new(t.Id, t.Name, t.Description, BoardTaskStatusMap.From(t.Status), t.Position, t.Tags, assignees);
+        new(t.Id, t.Name, t.Description, BoardTaskStatusMap.From(t.Status), t.Position, t.Tags, assignees, TaskPriorityMap.From(t.Priority));
 
     private static async Task<BoardTaskDto> LoadDtoAsync(AppDbContext db, BoardTask task, CancellationToken ct)
     {

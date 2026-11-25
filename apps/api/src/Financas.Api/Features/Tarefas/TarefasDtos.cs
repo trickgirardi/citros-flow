@@ -28,6 +28,37 @@ public static class BoardTaskStatusMap
     };
 }
 
+/// <summary>Prioridade da tarefa (opcional: sem prioridade é nulo).</summary>
+public enum TaskPriority
+{
+    Baixa,
+    Media,
+    Alta,
+    Urgente,
+}
+
+public static class TaskPriorityMap
+{
+    /// <summary>O banco guarda "baixa"/"media"/"alta"/"urgente" (com check constraint); nulo = sem prioridade.</summary>
+    public static string? ToDb(TaskPriority? priority) => priority switch
+    {
+        TaskPriority.Baixa => "baixa",
+        TaskPriority.Media => "media",
+        TaskPriority.Alta => "alta",
+        TaskPriority.Urgente => "urgente",
+        _ => null,
+    };
+
+    public static TaskPriority? From(string? dbValue) => dbValue switch
+    {
+        "baixa" => TaskPriority.Baixa,
+        "media" => TaskPriority.Media,
+        "alta" => TaskPriority.Alta,
+        "urgente" => TaskPriority.Urgente,
+        _ => null,
+    };
+}
+
 public record TaskAssigneeDto(Guid Id, string Name);
 
 /// <param name="Position">Ordem dentro da coluna (0 = topo).</param>
@@ -38,10 +69,13 @@ public record BoardTaskDto(
     BoardTaskStatus Status,
     int Position,
     List<string> Tags,
-    List<TaskAssigneeDto> Assignees);
+    List<TaskAssigneeDto> Assignees,
+    TaskPriority? Priority);
 
+/// <param name="Priority">Opcional. O PUT troca todos os campos: sem prioridade (ou nula) tira a prioridade.</param>
 public record TaskRequest(
-    string? Name, string? Description, BoardTaskStatus? Status, List<string>? Tags, List<Guid>? AssigneeIds);
+    string? Name, string? Description, BoardTaskStatus? Status, List<string>? Tags, List<Guid>? AssigneeIds,
+    TaskPriority? Priority = null);
 
 /// <param name="Index">Posição na coluna de destino (0 = topo). Além do fim, vai para o fim.</param>
 public record MoveTaskRequest(BoardTaskStatus? Status, int? Index);
@@ -56,12 +90,13 @@ public static class TaskRules
 
     /// <summary>Campos já validados e normalizados.</summary>
     public record Clean(
-        string Name, string Description, BoardTaskStatus Status, List<string> Tags, List<Guid> AssigneeIds);
+        string Name, string Description, BoardTaskStatus Status, List<string> Tags, List<Guid> AssigneeIds,
+        TaskPriority? Priority);
 
     /// <summary>Valida e normaliza (trim, tags sem vazias e sem repetidas). Devolve a mensagem de erro, ou null.</summary>
     public static string? Validate(TaskRequest request, out Clean clean)
     {
-        clean = new Clean("", "", BoardTaskStatus.AFazer, [], []);
+        clean = new Clean("", "", BoardTaskStatus.AFazer, [], [], null);
 
         if (!Text.TryClean(request.Name, NameMaxLength, out var name))
             return $"Nome obrigatório, com até {NameMaxLength} caracteres.";
@@ -85,7 +120,7 @@ public static class TaskRules
         var assignees = (request.AssigneeIds ?? []).Distinct().ToList();
         if (assignees.Count > MaxAssignees) return $"No máximo {MaxAssignees} responsáveis por tarefa.";
 
-        clean = new Clean(name, description, status, tags, assignees);
+        clean = new Clean(name, description, status, tags, assignees, request.Priority);
         return null;
     }
 }

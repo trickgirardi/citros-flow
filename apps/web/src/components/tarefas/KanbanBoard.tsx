@@ -25,6 +25,7 @@ import {
   KanbanColumn,
   statusFromDropId,
 } from "@/components/tarefas/KanbanColumn"
+import { PriorityBar } from "@/components/tarefas/PriorityBar"
 import { TaskCardBody } from "@/components/tarefas/TaskCard"
 import {
   TaskFormModal,
@@ -32,9 +33,12 @@ import {
 } from "@/components/tarefas/TaskFormModal"
 import {
   columnOf,
+  matchesPriority,
   moveTask,
+  sortByPriority,
   TASK_COLUMNS,
   tagSuggestions,
+  type PriorityFilter,
   type Task,
   type TaskAssignee,
   type TaskMove,
@@ -77,6 +81,9 @@ export function KanbanBoard({
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<TaskFormTarget | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  // Filtro e ordenação são só da tela: não mudam a ordem salva (por isso valem só até recarregar).
+  const [filter, setFilter] = useState<PriorityFilter>("all")
+  const [sorted, setSorted] = useState(false)
   const suggestions = useMemo(() => tagSuggestions(tasks), [tasks])
   const activeTask = optimisticTasks.find((task) => task.id === activeId)
 
@@ -104,6 +111,15 @@ export function KanbanBoard({
         setError(result.error)
       }
     })
+  }
+
+  /** O que a coluna mostra: filtrada e, se pedido, por prioridade (senão, na ordem salva). */
+  function visibleOf(status: TaskStatus) {
+    const column = columnOf(optimisticTasks, status).filter((task) =>
+      matchesPriority(task, filter)
+    )
+
+    return sorted ? sortByPriority(column) : column
   }
 
   function endOfColumn(task: Task, status: TaskStatus) {
@@ -137,7 +153,14 @@ export function KanbanBoard({
 
       status = overTask.status
 
-      if (status === task.status) {
+      if (sorted && status === task.status) {
+        // Ordenado por prioridade, a ordem mostrada não é a salva: reordenar na coluna não faz nada.
+        return
+      }
+
+      if (sorted) {
+        index = endOfColumn(task, status)
+      } else if (status === task.status) {
         // Mesma coluna: a tarefa assume a posição do cartão sobre o qual foi solta.
         index = columnOf(optimisticTasks, status).findIndex(
           (item) => item.id === overTask.id
@@ -218,6 +241,14 @@ export function KanbanBoard({
           </p>
         ) : null}
 
+        <PriorityBar
+          filter={filter}
+          sorted={sorted}
+          tasks={optimisticTasks}
+          onFilter={setFilter}
+          onSortedChange={setSorted}
+        />
+
         <DndContext
           // Id fixo: o contador automático do dnd-kit difere entre servidor e navegador (hidratação).
           id="tasks-board"
@@ -241,7 +272,8 @@ export function KanbanBoard({
                 canManage={canManage}
                 label={column.label}
                 status={column.status}
-                tasks={columnOf(optimisticTasks, column.status)}
+                tasks={visibleOf(column.status)}
+                total={columnOf(optimisticTasks, column.status).length}
                 onCreate={() =>
                   setForm({ kind: "create", status: column.status })
                 }

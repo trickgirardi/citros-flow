@@ -333,6 +333,7 @@ create table tasks (
   status text not null check (status in ('a_fazer', 'em_andamento', 'concluida')),
   position integer not null,            -- ordem dentro da coluna (0 = topo)
   tags text[] not null default '{}',
+  priority text check (priority in ('baixa', 'media', 'alta', 'urgente')),   -- opcional (nulo = sem prioridade; spec: tarefas-prioridade-spec.md)
   created_by uuid not null references users(id),
   created_at timestamptz not null default now(),
   updated_by uuid references users(id),
@@ -627,6 +628,7 @@ O RLS do Supabase deixa de existir. A API é a **única** porta de acesso ao ban
 ### 7.13 Gestão de Tarefas (kanban)
 - Quadro por board em `/board/{id}/tarefas` com três colunas fixas: **A fazer**, **Em andamento**, **Concluída**. Spec completa em `.specs/tarefas-spec.md`.
 - Tarefa: **nome** e **status** obrigatórios; descrição, responsáveis (pessoas ativas com papel no board ou global) e tags (texto livre, com sugestões) opcionais.
+- **Prioridade** opcional (`Baixa`, `Média`, `Alta`, `Urgente`; selo no cartão, filtro e "Ordenar por prioridade" só na tela; spec em `.specs/tarefas-prioridade-spec.md`). "Minhas tarefas" do dashboard lista as mais prioritárias primeiro.
 - Mover entre colunas e reordenar por arrastar (`@dnd-kit`, com mouse, toque e teclado) ou pelo menu "Mover para". O arrastar é otimista.
 - Quem tem qualquer papel no board vê o quadro em leitura; **só `admin` e `junta_administrativa`** criam, editam, movem e removem (`CanManageTasks`, seção 6).
 - API: `GET/POST /api/boards/{id}/tasks`, `PUT/DELETE .../tasks/{taskId}`, `PATCH .../tasks/{taskId}/move`, `GET .../task-assignees` (só para quem gerencia).
@@ -945,6 +947,10 @@ Detalhes, arquivos afetados e critérios de cada etapa em [docs/refactor-plan.md
 ### Fase 19 — Dashboard (tela inicial)
 - [x] `GET /api/boards/{id}/dashboard` (caixa, histórico de 6 meses, tarefas, estoque) e testes
 - [x] Front: cartões de indicador, gráfico de colunas, blocos de tarefas e estoque; dashboard como tela inicial
+
+### Fase 20 — Prioridade nas tarefas
+- [x] Coluna `tasks.priority` (opcional, check), API (criar/editar/listar), dashboard e testes
+- [x] Front: selo no cartão, campo no modal, filtro e ordenação por prioridade, selo em "Minhas tarefas"
 
 ### Backlog Pós-MVP
 - [ ] BoardSelector completo

@@ -15,9 +15,9 @@ public record DashboardCash(
 /// <param name="Month">yyyy-MM.</param>
 public record DashboardMonth(string Month, decimal Entradas, decimal Saidas);
 
-public record DashboardTaskItem(Guid Id, string Name, BoardTaskStatus Status);
+public record DashboardTaskItem(Guid Id, string Name, BoardTaskStatus Status, TaskPriority? Priority);
 
-/// <param name="Mine">Até 5 tarefas da pessoa logada que não estão concluídas (em andamento primeiro).</param>
+/// <param name="Mine">Até 5 tarefas da pessoa logada que não estão concluídas (mais prioritárias primeiro; empate: em andamento antes de a fazer).</param>
 /// <param name="MineTotal">Quantas são, no total.</param>
 public record DashboardTasks(
     int AFazer, int EmAndamento, int Concluida, List<DashboardTaskItem> Mine, int MineTotal);

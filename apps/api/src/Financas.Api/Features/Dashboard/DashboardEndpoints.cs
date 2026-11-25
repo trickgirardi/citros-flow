@@ -91,14 +91,15 @@ public static class DashboardEndpoints
         var mine = db.Tasks.AsNoTracking().Where(t => t.BoardId == boardId && t.Status != "concluida"
             && db.TaskAssignees.Any(a => a.TaskId == t.Id && a.UserId == userId));
         var items = await mine
-            .OrderBy(t => t.Status == "em_andamento" ? 0 : 1).ThenBy(t => t.Position).ThenBy(t => t.CreatedAt)
+            .OrderBy(t => t.Priority == "urgente" ? 0 : t.Priority == "alta" ? 1 : t.Priority == "media" ? 2 : t.Priority == "baixa" ? 3 : 4)
+            .ThenBy(t => t.Status == "em_andamento" ? 0 : 1).ThenBy(t => t.Position).ThenBy(t => t.CreatedAt)
             .Take(ListSize)
-            .Select(t => new { t.Id, t.Name, t.Status })
+            .Select(t => new { t.Id, t.Name, t.Status, t.Priority })
             .ToListAsync(ct);
 
         return new DashboardTasks(
             Count("a_fazer"), Count("em_andamento"), Count("concluida"),
-            items.Select(t => new DashboardTaskItem(t.Id, t.Name, BoardTaskStatusMap.From(t.Status))).ToList(),
+            items.Select(t => new DashboardTaskItem(t.Id, t.Name, BoardTaskStatusMap.From(t.Status), TaskPriorityMap.From(t.Priority))).ToList(),
             await mine.CountAsync(ct));
     }
 

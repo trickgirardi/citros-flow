@@ -164,10 +164,13 @@ public class DashboardTests(PostgresFixture postgres)
 
     // ---- tarefas ----
 
-    private async Task AddTask(HttpClient admin, Guid board, string name, string status, params Guid[] assignees)
+    private async Task AddTask(HttpClient admin, Guid board, string name, string status, params Guid[] assignees) =>
+        await AddTask(admin, board, name, status, null, assignees);
+
+    private async Task AddTask(HttpClient admin, Guid board, string name, string status, string? priority, params Guid[] assignees)
     {
         var response = await admin.SendJsonAsync(HttpMethod.Post, $"/api/boards/{board}/tasks",
-            new { name, status, tags = Array.Empty<string>(), assigneeIds = assignees });
+            new { name, status, priority, tags = Array.Empty<string>(), assigneeIds = assignees });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -193,6 +196,41 @@ public class DashboardTests(PostgresFixture postgres)
         Assert.Equal(["E1", "A1"], tasks.GetProperty("mine").EnumerateArray().Select(t => t.GetProperty("name").GetString()!));
         Assert.Equal("emAndamento", tasks.GetProperty("mine")[0].GetProperty("status").GetString());
         Assert.Equal(2, tasks.GetProperty("mineTotal").GetInt32());
+    }
+
+    [Fact]
+    public async Task Minhas_tarefas_vem_com_a_prioridade_e_as_mais_prioritarias_primeiro()
+    {
+        var (board, me, client) = await Setup();
+        await AddTask(client, board, "Sem", "emAndamento", null, me);
+        await AddTask(client, board, "Baixa", "emAndamento", "baixa", me);
+        await AddTask(client, board, "Alta a fazer", "aFazer", "alta", me);
+        await AddTask(client, board, "Urgente", "aFazer", "urgente", me);
+        await AddTask(client, board, "Alta em andamento", "emAndamento", "alta", me);
+        await AddTask(client, board, "Média", "aFazer", "media", me);
+
+        var (_, body) = await Dash(client, board);
+        var mine = body.GetProperty("tasks").GetProperty("mine").EnumerateArray().ToList();
+
+        // prioridade primeiro; empate: em andamento antes de a fazer
+        Assert.Equal(["Urgente", "Alta em andamento", "Alta a fazer", "Média", "Baixa"],
+            mine.Select(t => t.GetProperty("name").GetString()!));
+        Assert.Equal(["urgente", "alta", "alta", "media", "baixa"], mine.Select(t => t.GetProperty("priority").GetString()!));
+        Assert.Equal(6, body.GetProperty("tasks").GetProperty("mineTotal").GetInt32()); // a "Sem" ficou fora só do limite de 5
+    }
+
+    [Fact]
+    public async Task Minhas_tarefas_sem_prioridade_vem_com_prioridade_nula_e_por_ultimo()
+    {
+        var (board, me, client) = await Setup();
+        await AddTask(client, board, "Sem", "emAndamento", null, me);
+        await AddTask(client, board, "Baixa", "aFazer", "baixa", me);
+
+        var (_, body) = await Dash(client, board);
+        var mine = body.GetProperty("tasks").GetProperty("mine").EnumerateArray().ToList();
+
+        Assert.Equal(["Baixa", "Sem"], mine.Select(t => t.GetProperty("name").GetString()!));
+        Assert.Equal(JsonValueKind.Null, mine[1].GetProperty("priority").ValueKind);
     }
 
     [Fact]

@@ -8,7 +8,11 @@ public class BoardTaskConfiguration : IEntityTypeConfiguration<BoardTask>
 {
     public void Configure(EntityTypeBuilder<BoardTask> b)
     {
-        b.ToTable("tasks", t => t.HasCheckConstraint("ck_tasks_status", "status in ('a_fazer', 'em_andamento', 'concluida')"));
+        b.ToTable("tasks", t =>
+        {
+            t.HasCheckConstraint("ck_tasks_status", "status in ('a_fazer', 'em_andamento', 'concluida')");
+            t.HasCheckConstraint("ck_tasks_priority", "priority is null or priority in ('baixa', 'media', 'alta', 'urgente')");
+        });
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.Name).IsRequired();

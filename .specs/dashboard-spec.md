@@ -20,14 +20,14 @@ Qualquer papel no board (404 se não vê; 400 se `month` inválido). Resposta:
 | `month` | o mês pedido |
 | `cash` | `previousBalance`, `entradasTotal`, `saidasTotal`, `balance`, `reservesTotal`, `transactionCount`: **os mesmos números do resumo mensal** (`/months/{month}`), sem as listas |
 | `history` | 6 itens em ordem cronológica, o último é `month`: `{ month, entradas, saidas }`; mês sem lançamentos vem com `0.00` |
-| `tasks` | `aFazer`, `emAndamento`, `concluida` (contagens); `mine`: até 5 tarefas **da pessoa logada** que não estão concluídas (`id`, `name`, `status`), em andamento primeiro; `mineTotal`: quantas são |
+| `tasks` | `aFazer`, `emAndamento`, `concluida` (contagens); `mine`: até 5 tarefas **da pessoa logada** que não estão concluídas (`id`, `name`, `status`, `priority`), mais prioritárias primeiro (depois em andamento, depois a ordem do quadro); `mineTotal`: quantas são |
 | `stock` | `emEstoque`, `aCaminho`, `comprar`, `comprarComUrgencia` (contagens); `attention`: até 5 itens para agir (`id`, `name`, `status`, `assignee`), `Comprar com urgência` primeiro, depois `Comprar`, por nome; `attentionTotal`: quantos são |
 
 ## Tela `/board/{id}/dashboard`
 
 - Cabeçalho: título "Dashboard" e o nome do board acima. Abaixo, uma frase: "Resumo de novembro de 2026."
 - **Caixa do mês:** título com o mês e link "Ver fluxo de caixa". Quatro **cartões de indicador** (número grande, rótulo e apoio): **Saldo final** (azul se positivo, vermelho se negativo; apoio "Saldo anterior R$ …"), **Entradas** (apoio: nº de transações), **Saídas**, **Reservas** ("informativo, fora do saldo"). Abaixo, o **gráfico de colunas** "Entradas e saídas nos últimos 6 meses": duas colunas por mês (entradas em azul, saídas em vermelho), eixo com o maior valor, rótulos curtos (`nov.`), mês atual em destaque, legenda e tabela equivalente.
-- **Tarefas:** link "Ver tarefas"; três contagens (A fazer, Em andamento, Concluída) e a lista **Minhas tarefas** (nome + status; "Você ainda não tem tarefas em aberto." se vazia; "e mais N" se passar de 5). Cada tarefa leva a `/tarefas`.
+- **Tarefas:** link "Ver tarefas"; três contagens (A fazer, Em andamento, Concluída) e a lista **Minhas tarefas** (nome, selo da prioridade e status; as mais prioritárias primeiro, depois em andamento antes de a fazer; "Você ainda não tem tarefas em aberto." se vazia; "e mais N" se passar de 5). Cada tarefa leva a `/tarefas`.
 - **Estoque:** link "Ver estoque"; quatro contagens por status e a lista **Precisa de ação** (nome, status e responsável; "Nada para comprar agora." se vazia; "e mais N").
 - Colunas pela largura do **conteúdo** (container query): cartões em 2 colunas a partir de 28rem e em 4 a partir de 64rem (o número do saldo nunca quebra); Tarefas e Estoque lado a lado a partir de 56rem. A página rola dentro da área de conteúdo (a tela não).
 - Estado vazio: board novo mostra zeros, o gráfico com meses zerados e as listas vazias, sem erro.

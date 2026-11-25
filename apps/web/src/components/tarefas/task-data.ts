@@ -3,6 +3,7 @@ import type { components } from "@/lib/api/schema"
 export type Task = components["schemas"]["BoardTaskDto"]
 export type TaskStatus = components["schemas"]["BoardTaskStatus"]
 export type TaskAssignee = components["schemas"]["TaskAssigneeDto"]
+export type TaskPriority = NonNullable<components["schemas"]["TaskPriority"]>
 
 /** Colunas fixas do quadro, na ordem da tela. */
 export const TASK_COLUMNS: readonly { label: string; status: TaskStatus }[] = [
@@ -10,6 +11,73 @@ export const TASK_COLUMNS: readonly { label: string; status: TaskStatus }[] = [
   { label: "Em andamento", status: "emAndamento" },
   { label: "Concluída", status: "concluida" },
 ]
+
+type PriorityInfo = {
+  label: string
+  priority: TaskPriority
+  /** 0 = a mais prioritária: é a ordem de "Ordenar por prioridade". */
+  rank: number
+  /** Selo com texto e cor (a cor nunca é a única pista). */
+  style: string
+}
+
+/** Da mais para a menos prioritária (o campo do modal lista ao contrário, de Baixa a Urgente). */
+export const TASK_PRIORITIES: readonly PriorityInfo[] = [
+  {
+    label: "Urgente",
+    priority: "urgente",
+    rank: 0,
+    style: "bg-destructive/10 text-destructive",
+  },
+  {
+    label: "Alta",
+    priority: "alta",
+    rank: 1,
+    style: "bg-primary/30 text-foreground",
+  },
+  {
+    label: "Média",
+    priority: "media",
+    rank: 2,
+    style: "bg-accent-ink/10 text-accent-ink",
+  },
+  {
+    label: "Baixa",
+    priority: "baixa",
+    rank: 3,
+    style: "bg-muted text-muted-foreground",
+  },
+]
+
+export function priorityInfo(priority: TaskPriority) {
+  return TASK_PRIORITIES.find((item) => item.priority === priority)!
+}
+
+/** Filtro do quadro: tudo, só sem prioridade ou um nível. */
+export type PriorityFilter = "all" | "none" | TaskPriority
+
+export function matchesPriority(task: Task, filter: PriorityFilter) {
+  if (filter === "all") {
+    return true
+  }
+
+  return filter === "none" ? task.priority === null : task.priority === filter
+}
+
+// Sem prioridade vem depois de todas as outras.
+const NO_PRIORITY_RANK = TASK_PRIORITIES.length
+
+function rankOf(task: Task) {
+  return task.priority ? priorityInfo(task.priority).rank : NO_PRIORITY_RANK
+}
+
+/** Mais prioritárias primeiro; empate pela ordem salva (`position`). Não muda a lista recebida. */
+export function sortByPriority(tasks: readonly Task[]) {
+  return [...tasks].sort(
+    (first, second) =>
+      rankOf(first) - rankOf(second) || first.position - second.position
+  )
+}
 
 export const TASK_LIMITS = {
   description: 2000,

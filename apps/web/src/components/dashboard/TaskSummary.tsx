@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { StatCard } from "@/components/dashboard/StatCard"
 import { DashboardSection } from "@/components/dashboard/DashboardSection"
+import { TaskPriorityBadge } from "@/components/tarefas/TaskPriorityBadge"
 import type { TaskStatus } from "@/components/tarefas/task-data"
 import type { components } from "@/lib/api/schema"
 
@@ -49,8 +50,13 @@ export function TaskSummary({
                   <span className="min-w-0 font-semibold [overflow-wrap:anywhere]">
                     {task.name}
                   </span>
-                  <span className="shrink-0 rounded-pill bg-muted px-2.5 py-0.5 text-xs font-semibold">
-                    {STATUS_LABEL[task.status]}
+                  <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                    {task.priority ? (
+                      <TaskPriorityBadge priority={task.priority} />
+                    ) : null}
+                    <span className="rounded-pill bg-muted px-2.5 py-0.5 text-xs font-semibold">
+                      {STATUS_LABEL[task.status]}
+                    </span>
                   </span>
                 </Link>
               </li>

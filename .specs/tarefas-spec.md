@@ -10,6 +10,7 @@ Status: aprovado em 2026-11-26. Substitui a página "Em construção" de `/board
 - **Permissões:** criar, editar, mover e remover tarefas só com `junta_administrativa` ou `admin`. **Quem tem qualquer papel no board vê o quadro**, em leitura. O financeiro não muda (escrever = `admin` ou `tesoureiro`). Uma pessoa só com `junta_administrativa` vê o fluxo de caixa em leitura, como um `viewer`.
 - **Vários papéis por pessoa:** a mesma pessoa pode ter mais de um papel no mesmo board (ex.: `admin`, `tesoureiro` e `junta_administrativa`). As permissões se somam.
 - O estoque usa a mesma regra das tarefas (`.specs/estoque-spec.md`).
+- **Prioridade** opcional por tarefa: ver `.specs/tarefas-prioridade-spec.md`.
 
 ## Papéis
 
@@ -62,7 +63,7 @@ Autorização como no resto: sem sessão 401; board que a pessoa não vê 404; s
 
 ## Fora de escopo
 
-Data de entrega, prioridade, comentários, anexos, colunas personalizadas, tela de gestão de tags, notificações, estoque.
+Data de entrega, comentários, anexos, colunas personalizadas, tela de gestão de tags, notificações, estoque.
 
 ## Validação
 
